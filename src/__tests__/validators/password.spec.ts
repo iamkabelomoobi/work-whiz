@@ -1,54 +1,68 @@
-import { validate } from 'class-validator';
-import { PasswordDto } from '@work-whiz/validators/password.validator';
+import { passwordValidator } from "@work-whiz/validators/password.validator";
 
-describe('StrongPasswordConstraint', () => {
-  it('should pass for a strong password', async () => {
-    const dto = new PasswordDto();
-    dto.password = 'Str0ngP@ssw0rd!';
-
-    const errors = await validate(dto);
-    expect(errors).toHaveLength(0);
+describe("passwordValidator", () => {
+  it("should return undefined for a strong valid password", () => {
+    const password = "ValidPassw0rd!";
+    const error = passwordValidator(password);
+    expect(error).toBeUndefined();
   });
 
-  it('should fail if password is empty', async () => {
-    const dto = new PasswordDto();
-    dto.password = '';
-
-    const errors = await validate(dto);
-    expect(errors).toHaveLength(1);
-    expect(errors[0].constraints?.isNotEmpty).toBe('Please enter a password');
+  it("should return error for empty password", () => {
+    const error = passwordValidator("");
+    expect(error).toBeDefined();
+    expect(error?.details[0].message).toBe("Please enter a password.");
   });
 
-  it('should fail if password is too short', async () => {
-    const dto = new PasswordDto();
-    dto.password = 'Short1!';
+  it("should return error for password shorter than 12 characters", () => {
+    const error = passwordValidator("Abc1!");
+    expect(error).toBeDefined();
+    expect(error?.details.some((d) => d.message === "Password should be at least 12 characters long.")).toBe(true);
+  });
 
-    const errors = await validate(dto);
-    expect(errors).toHaveLength(1);
-    expect(errors[0].constraints?.minLength).toBe(
-      'Password should be at least 12 characters long'
+  it("should return error for password longer than 64 characters", () => {
+    const longPassword = "A1!".repeat(22) + "Extra";
+    const error = passwordValidator(longPassword);
+    expect(error).toBeDefined();
+    expect(error?.details.some((d) => d.message === "Password should not exceed 64 characters.")).toBe(true);
+  });
+
+  it("should return error for missing uppercase letters", () => {
+    const error = passwordValidator("validpassword1!");
+    expect(error).toBeDefined();
+    expect(error?.details[0].message).toBe(
+      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character."
     );
   });
 
-  it('should fail if password does not contain required character types', async () => {
-    const dto = new PasswordDto();
-    dto.password = 'onlylowercaseletters';
-
-    const errors = await validate(dto);
-    expect(errors).toHaveLength(1);
-    expect(errors[0].constraints?.isStrongPassword).toBe(
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+  it("should return error for missing lowercase letters", () => {
+    const error = passwordValidator("VALIDPASSWORD1!");
+    expect(error).toBeDefined();
+    expect(error?.details[0].message).toBe(
+      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character."
     );
   });
 
-  it('should fail if password exceeds max length', async () => {
-    const dto = new PasswordDto();
-    dto.password = 'A'.repeat(65);
-
-    const errors = await validate(dto);
-    expect(errors).toHaveLength(1);
-    expect(errors[0].constraints?.maxLength).toBe(
-      'Password should not exceed 64 characters'
+  it("should return error for missing digits", () => {
+    const error = passwordValidator("ValidPassword!");
+    expect(error).toBeDefined();
+    expect(error?.details[0].message).toBe(
+      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character."
     );
+  });
+
+  it("should return error for missing special characters", () => {
+    const error = passwordValidator("ValidPassword1");
+    expect(error).toBeDefined();
+    expect(error?.details[0].message).toBe(
+      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character."
+    );
+  });
+
+  it("should return error if input is null or undefined", () => {
+    const error1 = passwordValidator(null as unknown as string);
+    const error2 = passwordValidator(undefined as unknown as string);
+    expect(error1).toBeDefined();
+    expect(error2).toBeDefined();
+    expect(error2?.details[0].message).toBe("Password is required.");
   });
 });

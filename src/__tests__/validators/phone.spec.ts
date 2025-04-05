@@ -1,75 +1,54 @@
-import { validateSync } from 'class-validator';
-import {
-  validatePhoneNumber,
-  IsValidPhoneNumber,
-} from '@work-whiz/validators/phone.validator';
+import { phoneValidator } from "@work-whiz/validators/phone.validator";
 
-describe('Phone Validation', () => {
-  describe('validatePhoneNumber (standalone)', () => {
-    // South Africa
-    it('validates ZA numbers correctly', () => {
-      expect(validatePhoneNumber('+27821234567', 'ZA')).toBe(true);
-      expect(validatePhoneNumber('0821234567', 'ZA')).toBe(true);
-      expect(validatePhoneNumber('+44821234567', 'ZA')).toBe(false);
-    });
-
-    // United States
-    it('validates US numbers correctly', () => {
-      expect(validatePhoneNumber('+12025551234', 'US')).toBe(true);
-      expect(validatePhoneNumber('2025551234', 'US')).toBe(true);
-      expect(validatePhoneNumber('0821234567', 'US')).toBe(false);
-    });
-
-    // Edge cases
-    it('handles invalid inputs', () => {
-      expect(validatePhoneNumber('', 'ZA')).toBe(false);
-      expect(validatePhoneNumber('not-a-phone', 'ZA')).toBe(false);
-      expect(validatePhoneNumber('+27821234567890123', 'ZA')).toBe(false);
-    });
+describe("phoneValidator", () => {
+  it("should return undefined for a valid phone number with country code", () => {
+    const error = phoneValidator("+1234567890123");
+    expect(error).toBeUndefined();
   });
 
-  describe('IsValidPhoneNumber (decorator)', () => {
-    class TestDTO {
-      @IsValidPhoneNumber('ZA')
-      phone: string;
-    }
-
-    it('validates through class-validator', () => {
-      const validDto = new TestDTO();
-      validDto.phone = '+27821234567';
-
-      const invalidDto = new TestDTO();
-      invalidDto.phone = '12345';
-
-      expect(validateSync(validDto)).toEqual([]);
-      expect(validateSync(invalidDto)).toHaveLength(1);
-    });
+  it("should return error for missing plus sign", () => {
+    const error = phoneValidator("1234567890");
+    expect(error).toBeDefined();
+    expect(error?.details[0].message).toBe("Please enter a valid phone number with country code.");
   });
 
-  describe('Country Patterns', () => {
-    const testCases = [
-      {
-        country: 'ZA',
-        valid: ['+27821234567', '0821234567'],
-        invalid: ['+44821234567', '082123'],
-      },
-      {
-        country: 'US',
-        valid: ['+12025551234', '2025551234'],
-        invalid: ['+27821234567', '123'],
-      },
-      { country: 'XX', valid: ['+1234567890'], invalid: ['short'] },
-    ];
+  it("should return error for letters in the phone number", () => {
+    const error = phoneValidator("+123ABC7890");
+    expect(error).toBeDefined();
+    expect(error?.details[0].message).toBe("Please enter a valid phone number with country code.");
+  });
 
-    testCases.forEach(({ country, valid, invalid }) => {
-      it(`handles ${country} patterns`, () => {
-        valid.forEach((num) =>
-          expect(validatePhoneNumber(num, country)).toBe(true)
-        );
-        invalid.forEach((num) =>
-          expect(validatePhoneNumber(num, country)).toBe(false)
-        );
-      });
-    });
+  it("should return error for too short number", () => {
+    const error = phoneValidator("+123456");
+    expect(error).toBeDefined();
+    expect(error?.details[0].message).toBe("Please enter a valid phone number with country code.");
+  });
+
+  it("should return error for too long number", () => {
+    const error = phoneValidator("+12345678901234567890");
+    expect(error).toBeDefined();
+    expect(error?.details[0].message).toBe("Please enter a valid phone number with country code.");
+  });
+
+  it("should return error for empty string", () => {
+    const error = phoneValidator("");
+    expect(error).toBeDefined();
+    expect(error?.details[0].message).toBe("Phone number cannot be empty.");
+  });
+
+  it("should return error for only plus sign", () => {
+    const error = phoneValidator("+");
+    expect(error).toBeDefined();
+    expect(error?.details[0].message).toBe("Please enter a valid phone number with country code.");
+  });
+
+  it("should return error if input is null/undefined", () => {
+    const error1 = phoneValidator(null as unknown as string);
+    const error2 = phoneValidator(undefined as unknown as string);
+
+    expect(error1).toBeDefined();
+    expect(error2).toBeDefined();
+    expect(error1?.details[0].message).toBe("Phone number is required.");
+    expect(error2?.details[0].message).toBe("Phone number is required.");
   });
 });
