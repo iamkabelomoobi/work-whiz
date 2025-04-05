@@ -5,13 +5,13 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  Validate,
+  IsEnum,
   ValidateNested,
 } from 'class-validator';
-import { UserResponseDto } from './user.dto';
+import { UserResponseDTO } from './user.dto';
 import { Permissions, PERMISSIONS } from '@work-whiz/types';
 
-export class AdminDto {
+export class AdminDTO {
   @Expose()
   @IsUUID()
   id: string;
@@ -28,20 +28,14 @@ export class AdminDto {
 
   @Expose()
   @IsArray()
-  @Transform(({ value }) => (Array.isArray(value) ? value : []))
-  @Validate(
-    (value: Permissions[]) =>
-      value.every((p) => PERMISSIONS.includes(p)) || {
-        message: 'Invalid permission',
-      }
-  )
+  @IsEnum(PERMISSIONS, { each: true })
   permissions: Permissions[] = [];
 
   @Expose()
-  @Type(() => UserResponseDto)
+  @Type(() => UserResponseDTO)
   @ValidateNested()
   @IsOptional()
-  user?: UserResponseDto;
+  user?: UserResponseDTO;
 
   @Expose()
   @IsDate()
@@ -54,7 +48,7 @@ export class AdminDto {
   updatedAt: Date;
 }
 
-export class AdminResponseDto extends AdminDto {
+export class AdminResponseDTO extends AdminDTO {
   @Expose()
   get fullName() {
     return (

@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { Role } from '@work-whiz/types';
 
-export class UserDto {
+export class UserDTO {
   @Expose()
   @IsUUID()
   readonly id: string;
@@ -64,7 +64,7 @@ export class UserDto {
   readonly updatedAt: Date;
 }
 
-export class UserResponseDto extends UserDto {
+export class UserResponseDTO extends UserDTO {
   @Expose()
   get status() {
     return this.isActive ? 'active' : 'inactive';

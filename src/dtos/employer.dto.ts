@@ -8,9 +8,9 @@ import {
   IsUrl,
   ValidateNested,
 } from 'class-validator';
-import { UserResponseDto } from './user.dto';
+import { UserResponseDTO } from './user.dto';
 
-export class EmployerDto {
+export class EmployerDTO {
   @Expose()
   @IsString()
   id: string;
@@ -50,10 +50,10 @@ export class EmployerDto {
   isVerified: boolean;
 
   @Expose()
-  @Type(() => UserResponseDto)
+  @Type(() => UserResponseDTO)
   @ValidateNested()
   @IsOptional()
-  user?: UserResponseDto;
+  user?: UserResponseDTO;
 
   @Expose()
   @IsDate()
@@ -67,7 +67,7 @@ export class EmployerDto {
 }
 
 // For responses (adds computed fields)
-export class EmployerResponseDto extends EmployerDto {
+export class EmployerResponseDTO extends EmployerDTO {
   @Expose()
   get companyInfo() {
     return {

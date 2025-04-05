@@ -8,9 +8,9 @@ import {
   IsArray,
   ValidateNested,
 } from 'class-validator';
-import { UserResponseDto } from './user.dto';
+import { UserResponseDTO } from './user.dto';
 
-export class CandidateDto {
+export class CandidateDTO {
   @Expose()
   @IsUUID()
   id: string;
@@ -42,10 +42,10 @@ export class CandidateDto {
   isEmployed: boolean;
 
   @Expose()
-  @Type(() => UserResponseDto)
+  @Type(() => UserResponseDTO)
   @ValidateNested()
   @IsOptional()
-  user?: UserResponseDto;
+  user?: UserResponseDTO;
 
   @Expose()
   @IsDate()
@@ -59,7 +59,7 @@ export class CandidateDto {
 }
 
 // For responses (extends base DTO)
-export class CandidateResponseDto extends CandidateDto {
+export class CandidateResponseDTO extends CandidateDTO {
   @Expose()
   get fullName() {
     return (
