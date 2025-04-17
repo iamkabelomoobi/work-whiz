@@ -17,9 +17,9 @@ export const getUserRole = (req: Request): Role | undefined => {
   if (!host) return undefined;
 
   const matchingConfig = ROLE_CONFIGS.find(
-    (config) =>
+    config =>
       host === `${config.subdomain}.example.com` ||
-      host.startsWith(`${config.subdomain}.`)
+      host.startsWith(`${config.subdomain}.`),
   );
 
   return matchingConfig?.role;

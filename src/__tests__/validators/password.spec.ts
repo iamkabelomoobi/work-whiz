@@ -18,8 +18,8 @@ describe('passwordValidator', () => {
     expect(error).toBeDefined();
     expect(
       error?.details.some(
-        (d) => d.message === 'Password should be at least 12 characters long.'
-      )
+        d => d.message === 'Password should be at least 12 characters long.',
+      ),
     ).toBe(true);
   });
 
@@ -29,8 +29,8 @@ describe('passwordValidator', () => {
     expect(error).toBeDefined();
     expect(
       error?.details.some(
-        (d) => d.message === 'Password should not exceed 64 characters.'
-      )
+        d => d.message === 'Password should not exceed 64 characters.',
+      ),
     ).toBe(true);
   });
 
@@ -38,7 +38,7 @@ describe('passwordValidator', () => {
     const error = passwordValidator('validpassword1!');
     expect(error).toBeDefined();
     expect(error?.details[0].message).toBe(
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
     );
   });
 
@@ -46,7 +46,7 @@ describe('passwordValidator', () => {
     const error = passwordValidator('VALIDPASSWORD1!');
     expect(error).toBeDefined();
     expect(error?.details[0].message).toBe(
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
     );
   });
 
@@ -54,7 +54,7 @@ describe('passwordValidator', () => {
     const error = passwordValidator('ValidPassword!');
     expect(error).toBeDefined();
     expect(error?.details[0].message).toBe(
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
     );
   });
 
@@ -62,7 +62,7 @@ describe('passwordValidator', () => {
     const error = passwordValidator('ValidPassword1');
     expect(error).toBeDefined();
     expect(error?.details[0].message).toBe(
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
     );
   });
 

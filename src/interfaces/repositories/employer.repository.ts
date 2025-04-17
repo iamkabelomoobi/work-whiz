@@ -10,7 +10,7 @@ export interface IEmployerRepository {
   read(query: IEmployerQuery): Promise<IEmployer | null>;
   readAll(
     query: IEmployerQuery,
-    options: IPaginationQueryOptions
+    options: IPaginationQueryOptions,
   ): Promise<{ employers: IEmployer[]; total: number }>;
   update(id: string, data: Partial<IEmployer>): Promise<IEmployer | null>;
 

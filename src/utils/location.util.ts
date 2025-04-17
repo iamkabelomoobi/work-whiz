@@ -19,7 +19,7 @@ interface IpApiResponse {
  * @throws Will throw if the IP is invalid or API request fails.
  */
 export const getLocationFromIp = async (
-  ipAddress: string
+  ipAddress: string,
 ): Promise<{
   country: string;
   region: string;
@@ -34,7 +34,7 @@ export const getLocationFromIp = async (
   try {
     const response = await axios.get<IpApiResponse>(
       `http://ip-api.com/json/${ipAddress}?fields=status,country,regionName,city,lat,lon,isp,query`,
-      { timeout: 5000 }
+      { timeout: 5000 },
     );
 
     if (response.data.status !== 'success') {

@@ -114,7 +114,7 @@ class UserRepository implements IUserRepository {
    */
   public async create(
     user: Partial<IUser>,
-    transaction?: Transaction
+    transaction?: Transaction,
   ): Promise<IUser> {
     const t = transaction || (await sequelize.transaction());
     const isLocalTransaction = !transaction;
@@ -176,7 +176,7 @@ class UserRepository implements IUserRepository {
    */
   public async readAll(
     query: IUserQuery,
-    options: IPaginationQueryOptions
+    options: IPaginationQueryOptions,
   ): Promise<{
     users: IUser[];
     total: number;
@@ -196,11 +196,11 @@ class UserRepository implements IUserRepository {
       });
 
       return {
-        users: rows.map((user) =>
+        users: rows.map(user =>
           toIUserDTO({
             ...user.get({ plain: true }),
             avatarUrl: user.avatarUrl || '',
-          })
+          }),
         ),
         total: count,
         totalPages: pagination.getTotalPages(count),
@@ -223,7 +223,7 @@ class UserRepository implements IUserRepository {
   public async update(
     id: string,
     data: Partial<IUser>,
-    transaction?: Transaction
+    transaction?: Transaction,
   ): Promise<IUser> {
     const t = transaction || (await sequelize.transaction());
     const isLocalTransaction = !transaction;

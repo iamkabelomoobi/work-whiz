@@ -6,7 +6,7 @@ const REDIS_URI = config.database?.redis?.uri;
 
 if (!REDIS_URI) {
   logger.warn(
-    'Redis URI not found in config, using default localhost connection'
+    'Redis URI not found in config, using default localhost connection',
   );
 }
 
@@ -40,7 +40,7 @@ authenticationQueue.on('failed', (job, error) => {
   });
 });
 
-authenticationQueue.on('completed', (job) => {
+authenticationQueue.on('completed', job => {
   logger.info(`Job ${job.id} completed`, {
     jobId: job.id,
     data: job.data,

@@ -55,7 +55,7 @@ class AuthenticationTemplate {
 
   public passwordUpdate = (
     username: string,
-    device: Readonly<{ ip: string; browser: string; timestamp: string }>
+    device: Readonly<{ ip: string; browser: string; timestamp: string }>,
   ): string => {
     return notificationLib.getMailgenInstance('salted').generate({
       body: {

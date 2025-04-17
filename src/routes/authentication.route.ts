@@ -32,7 +32,7 @@ export class AuthenticationRoutes {
         .post(
           '/password/set',
           authorizationMiddleare.authorizePasswordSetup,
-          authenticationController.setupPassword
+          authenticationController.setupPassword,
         )
 
         /**
@@ -48,7 +48,7 @@ export class AuthenticationRoutes {
         .delete(
           '/logout',
           authenticationMiddleware.isAuthenticated,
-          authenticationController.logout
+          authenticationController.logout,
         )
 
         /**
@@ -65,7 +65,7 @@ export class AuthenticationRoutes {
           '/password/change',
           authorizationMiddleare.authorizePasswordReset,
           userAgentParser,
-          authenticationController.resetPassword
+          authenticationController.resetPassword,
         )
     );
   }

@@ -51,7 +51,7 @@ const env = cleanEnv(process.env, {
  */
 const handleServerError = (
   error: NodeJS.ErrnoException,
-  port: number
+  port: number,
 ): void => {
   const bind = typeof port === 'string' ? `Pipe ${port}` : `Port ${port}`;
 
@@ -88,7 +88,7 @@ const setupGracefulShutdown = (server: http.Server): void => {
         logger.info('Database connection closed');
       }
 
-      server.close((err) => {
+      server.close(err => {
         if (err) {
           logger.error('Error during server close', { error: err });
           process.exit(1);
@@ -113,7 +113,7 @@ const setupGracefulShutdown = (server: http.Server): void => {
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGQUIT', () => shutdown('SIGQUIT'));
 
-  process.on('uncaughtException', (error) => {
+  process.on('uncaughtException', error => {
     logger.error('Uncaught exception', {
       error: error.message,
       stack: error.stack,
@@ -148,7 +148,7 @@ const setupGracefulShutdown = (server: http.Server): void => {
  */
 export const startServer = async (
   app: Application,
-  options: ServerOptions = {}
+  options: ServerOptions = {},
 ): Promise<http.Server> => {
   const {
     port = env.PORT,
@@ -170,7 +170,7 @@ export const startServer = async (
 
     cluster.on('exit', (worker, code, signal) => {
       logger.warn(
-        `Worker ${worker.process.pid} died with code ${code} and signal ${signal}`
+        `Worker ${worker.process.pid} died with code ${code} and signal ${signal}`,
       );
       logger.info('Starting a new worker');
       cluster.fork();
@@ -223,7 +223,7 @@ export const startServer = async (
           windowMs: rateLimitOptions.windowMs,
           max: rateLimitOptions.max,
           message: 'Too many requests from this IP, please try again later',
-        })
+        }),
       );
     }
 

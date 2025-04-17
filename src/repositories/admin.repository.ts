@@ -29,7 +29,7 @@ class AdminRepository implements IAdminRepository {
    * @returns {WhereOptions<AdminModel>} Sequelize where options
    */
   private readonly buildWhereClause = (
-    query: IAdminQuery
+    query: IAdminQuery,
   ): WhereOptions<AdminModel> => {
     const where: WhereOptions<AdminModel> = {};
 
@@ -110,7 +110,7 @@ class AdminRepository implements IAdminRepository {
    */
   public async create(
     admin: Omit<IAdmin, 'id'>,
-    transaction?: Transaction
+    transaction?: Transaction,
   ): Promise<IAdmin> {
     const t = transaction || (await sequelize.transaction());
     const isLocalTransaction = !transaction;
@@ -170,7 +170,7 @@ class AdminRepository implements IAdminRepository {
    */
   public async readAll(
     query: IAdminQuery,
-    options: IPaginationQueryOptions
+    options: IPaginationQueryOptions,
   ): Promise<{
     admins: IAdmin[];
     total: number;
@@ -220,7 +220,7 @@ class AdminRepository implements IAdminRepository {
   public async update(
     id: string,
     data: Partial<IAdmin>,
-    transaction?: Transaction
+    transaction?: Transaction,
   ): Promise<IAdmin | null> {
     const t = transaction || (await sequelize.transaction());
     const isLocalTransaction = !transaction;

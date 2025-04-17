@@ -25,7 +25,7 @@ class AuthorizationMiddleware {
   public authorizePasswordSetup = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> => {
     try {
       const {
@@ -37,7 +37,7 @@ class AuthorizationMiddleware {
         responseUtil.sendError(
           res,
           { message: 'Password and token are required.' },
-          StatusCodes.BAD_GATEWAY
+          StatusCodes.BAD_GATEWAY,
         );
       }
 
@@ -46,7 +46,7 @@ class AuthorizationMiddleware {
         responseUtil.sendError(
           res,
           { message: 'Invalid password token.' },
-          StatusCodes.UNAUTHORIZED
+          StatusCodes.UNAUTHORIZED,
         );
       }
 
@@ -54,7 +54,7 @@ class AuthorizationMiddleware {
         responseUtil.sendError(
           res,
           { message: 'Invalid token type' },
-          StatusCodes.UNAUTHORIZED
+          StatusCodes.UNAUTHORIZED,
         );
       }
 
@@ -67,7 +67,7 @@ class AuthorizationMiddleware {
         responseUtil.sendError(
           res,
           { message: 'Invalid password token' },
-          StatusCodes.UNAUTHORIZED
+          StatusCodes.UNAUTHORIZED,
         );
       }
 
@@ -77,7 +77,7 @@ class AuthorizationMiddleware {
       responseUtil.sendError(
         res,
         { message: 'Error in authorizing password setup' },
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
@@ -91,7 +91,7 @@ class AuthorizationMiddleware {
   public authorizePasswordReset = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> => {
     try {
       const { password, token }: { password: string; token: string } = req.body;
@@ -100,7 +100,7 @@ class AuthorizationMiddleware {
         responseUtil.sendError(
           res,
           { message: 'Password and token are required.' },
-          StatusCodes.BAD_GATEWAY
+          StatusCodes.BAD_GATEWAY,
         );
       }
 
@@ -109,14 +109,14 @@ class AuthorizationMiddleware {
         responseUtil.sendError(
           res,
           { message: 'Invalid password token.' },
-          StatusCodes.UNAUTHORIZED
+          StatusCodes.UNAUTHORIZED,
         );
       }
       if (decodedPasswordToken.type !== 'password_reset') {
         responseUtil.sendError(
           res,
           { message: 'Invalid token type' },
-          StatusCodes.UNAUTHORIZED
+          StatusCodes.UNAUTHORIZED,
         );
       }
 
@@ -129,7 +129,7 @@ class AuthorizationMiddleware {
         responseUtil.sendError(
           res,
           { message: 'Invalid password token' },
-          StatusCodes.UNAUTHORIZED
+          StatusCodes.UNAUTHORIZED,
         );
       }
 
@@ -140,7 +140,7 @@ class AuthorizationMiddleware {
       responseUtil.sendError(
         res,
         { message: 'Invalid or expired token' },
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };

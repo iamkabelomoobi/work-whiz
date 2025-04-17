@@ -110,7 +110,7 @@ UserModel.init(
     modelName: 'User',
     tableName: 'Users',
     timestamps: true,
-  }
+  },
 );
 
 export { UserModel };

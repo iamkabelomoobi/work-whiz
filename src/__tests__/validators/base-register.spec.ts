@@ -26,7 +26,7 @@ describe('baseRegisterSchema', () => {
 
     expect(result.error).toBeDefined();
     expect(result.error?.details[0].message).toMatch(
-      /Phone number is required/
+      /Phone number is required/,
     );
   });
 
@@ -38,7 +38,7 @@ describe('baseRegisterSchema', () => {
 
     expect(result.error).toBeDefined();
     expect(result.error?.details[0].message).toBe(
-      'Please enter a valid email address.'
+      'Please enter a valid email address.',
     );
   });
 
@@ -50,7 +50,7 @@ describe('baseRegisterSchema', () => {
 
     expect(result.error).toBeDefined();
     expect(result.error?.details[0].message).toBe(
-      'Please enter a valid phone number with country code.'
+      'Please enter a valid phone number with country code.',
     );
   });
 
@@ -58,7 +58,7 @@ describe('baseRegisterSchema', () => {
     const result = baseRegisterSchema.validate({}, { abortEarly: false });
 
     expect(result.error).toBeDefined();
-    const messages = result.error?.details.map((d) => d.message);
+    const messages = result.error?.details.map(d => d.message);
 
     expect(messages).toContain('Email is required and cannot be empty.');
     expect(messages).toContain('Phone number is required.');

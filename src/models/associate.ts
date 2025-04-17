@@ -11,7 +11,7 @@ const models = {
 };
 
 const associateModels = () => {
-  Object.values(models).forEach((model) => {
+  Object.values(models).forEach(model => {
     if (model.associate) {
       model.associate(models);
     }

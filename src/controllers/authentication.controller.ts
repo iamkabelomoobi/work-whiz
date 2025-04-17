@@ -142,7 +142,7 @@ export class AuthenticationController {
   private setAuthCookies(
     res: Response,
     refreshToken: string,
-    csrfToken: string
+    csrfToken: string,
   ): void {
     res
       .cookie('refresh_token', refreshToken, this.REFRESH_TOKEN_COOKIE)
@@ -163,7 +163,7 @@ export class AuthenticationController {
    */
   private validateRefreshRequest(
     req: Request,
-    res: Response
+    res: Response,
   ): { refreshToken: string; userId: string } | null {
     const refreshToken = req.cookies.refresh_token;
     const userId = req.app.locals.userId;
@@ -172,7 +172,7 @@ export class AuthenticationController {
       responseUtil.sendError(
         res,
         SESSION_EXPIRED_MESSAGE,
-        StatusCodes.UNAUTHORIZED
+        StatusCodes.UNAUTHORIZED,
       );
       return null;
     }
@@ -197,13 +197,13 @@ export class AuthenticationController {
   private validateEmailAndPassword(
     email: string,
     password: string,
-    res: Response
+    res: Response,
   ): boolean {
     if (!email?.trim() || !password?.trim()) {
       responseUtil.sendError(
         res,
         'Email and password are required',
-        StatusCodes.BAD_REQUEST
+        StatusCodes.BAD_REQUEST,
       );
       return false;
     }
@@ -213,7 +213,7 @@ export class AuthenticationController {
       responseUtil.sendError(
         res,
         emailError.details[0].message,
-        StatusCodes.UNPROCESSABLE_ENTITY
+        StatusCodes.UNPROCESSABLE_ENTITY,
       );
       return false;
     }
@@ -223,7 +223,7 @@ export class AuthenticationController {
       responseUtil.sendError(
         res,
         passwordError.details[0].message,
-        StatusCodes.UNPROCESSABLE_ENTITY
+        StatusCodes.UNPROCESSABLE_ENTITY,
       );
       return false;
     }
@@ -274,24 +274,24 @@ export class AuthenticationController {
       switch (role) {
         case 'admin':
           registerErrors = adminRegisterValidator(
-            registerData as IAdminRegister
+            registerData as IAdminRegister,
           );
           break;
         case 'candidate':
           registerErrors = candidateRegisterValidator(
-            registerData as ICandidateRegister
+            registerData as ICandidateRegister,
           );
           break;
         case 'employer':
           registerErrors = employerRegisterValidator(
-            registerData as IEmployerRegister
+            registerData as IEmployerRegister,
           );
           break;
         default:
           return responseUtil.sendError(
             res,
             { message: 'Invalid role provided for registration.' },
-            StatusCodes.BAD_REQUEST
+            StatusCodes.BAD_REQUEST,
           );
       }
 
@@ -299,7 +299,7 @@ export class AuthenticationController {
         return responseUtil.sendError(
           res,
           { message: registerErrors.message },
-          StatusCodes.UNPROCESSABLE_ENTITY
+          StatusCodes.UNPROCESSABLE_ENTITY,
         );
       }
 
@@ -309,7 +309,7 @@ export class AuthenticationController {
       responseUtil.sendError(
         res,
         error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
+        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
@@ -344,13 +344,13 @@ export class AuthenticationController {
         responseUtil.sendError(
           res,
           'Email and password are required',
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
       }
 
       const { accessToken, refreshToken } = await authenticationService.login(
         email,
-        password
+        password,
       );
       const csrfToken = csrfUtil.generate(req, res);
 
@@ -362,7 +362,7 @@ export class AuthenticationController {
       responseUtil.sendError(
         res,
         error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
+        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
@@ -393,7 +393,7 @@ export class AuthenticationController {
       responseUtil.sendError(
         res,
         error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
+        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
@@ -427,13 +427,13 @@ export class AuthenticationController {
         return responseUtil.sendError(
           res,
           { message: passwordError.details[0].message },
-          StatusCodes.UNPROCESSABLE_ENTITY
+          StatusCodes.UNPROCESSABLE_ENTITY,
         );
       }
 
       const response = await authenticationService.setupPassword(
         userId,
-        password
+        password,
       );
       responseUtil.sendSuccess(res, response, StatusCodes.OK);
     } catch (error) {
@@ -441,7 +441,7 @@ export class AuthenticationController {
       responseUtil.sendError(
         res,
         error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
+        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
@@ -483,14 +483,14 @@ export class AuthenticationController {
       responseUtil.sendSuccess(
         res,
         { accessToken, csrfToken: newCsrfToken },
-        StatusCodes.OK
+        StatusCodes.OK,
       );
     } catch (error) {
       this.clearAuthCookies(res);
       responseUtil.sendError(
         res,
         error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
+        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
@@ -516,7 +516,7 @@ export class AuthenticationController {
 
   public forgotPassword = async (
     req: Request,
-    res: Response
+    res: Response,
   ): Promise<void> => {
     try {
       const { email } = req.body;
@@ -526,7 +526,7 @@ export class AuthenticationController {
         return responseUtil.sendError(
           res,
           { message: emailError.details[0].message },
-          StatusCodes.UNPROCESSABLE_ENTITY
+          StatusCodes.UNPROCESSABLE_ENTITY,
         );
       }
 
@@ -536,7 +536,7 @@ export class AuthenticationController {
       responseUtil.sendError(
         res,
         error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
+        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
@@ -571,7 +571,7 @@ export class AuthenticationController {
         return responseUtil.sendError(
           res,
           { message: passwordError.details[0].message },
-          StatusCodes.UNPROCESSABLE_ENTITY
+          StatusCodes.UNPROCESSABLE_ENTITY,
         );
       }
 
@@ -584,7 +584,7 @@ export class AuthenticationController {
           os: userAgent.os,
           ip: '24.48.0.1',
           timestamp: new Date().toISOString(),
-        }
+        },
       );
 
       responseUtil.sendSuccess(res, response, StatusCodes.OK);
@@ -592,7 +592,7 @@ export class AuthenticationController {
       responseUtil.sendError(
         res,
         error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
+        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };

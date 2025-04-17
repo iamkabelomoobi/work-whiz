@@ -33,7 +33,7 @@ class PasswordUtil {
   public async compareSync(
     role: string,
     plain: string,
-    hashed: string
+    hashed: string,
   ): Promise<boolean> {
     try {
       const secret = Buffer.from(config?.authentication?.argon[role]?.pepper);
@@ -49,7 +49,7 @@ class PasswordUtil {
 
   public async checkLeakedPassword(
     role: string,
-    password: string
+    password: string,
   ): Promise<boolean> {
     try {
       const hashed_password = await this.hashSync(role, password);
@@ -58,7 +58,7 @@ class PasswordUtil {
       const suffix = hashed_password.substring(5);
 
       const response = await axios.get(
-        `https://api.pwnedpasswords.com/range/${prefix}`
+        `https://api.pwnedpasswords.com/range/${prefix}`,
       );
 
       const is_leaked = response.data

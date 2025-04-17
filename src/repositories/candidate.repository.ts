@@ -31,7 +31,7 @@ class CandidateRepository implements ICandidateRepository {
    * buildWhereClause({ name: 'john' });
    */
   private readonly buildWhereClause = (
-    query: ICandidateQuery
+    query: ICandidateQuery,
   ): WhereOptions<CandidateModel> => {
     const where: WhereOptions<CandidateModel> = {};
 
@@ -126,7 +126,7 @@ class CandidateRepository implements ICandidateRepository {
    */
   public async create(
     candidate: ICandidate,
-    transaction?: Transaction
+    transaction?: Transaction,
   ): Promise<ICandidate> {
     const t = transaction || (await sequelize.transaction());
     const isLocalTransaction = !transaction;
@@ -195,7 +195,7 @@ class CandidateRepository implements ICandidateRepository {
    */
   public async readAll(
     query: ICandidateQuery,
-    options: IPaginationQueryOptions
+    options: IPaginationQueryOptions,
   ): Promise<{
     candidates: ICandidate[];
     total: number;
@@ -246,7 +246,7 @@ class CandidateRepository implements ICandidateRepository {
   public async update(
     id: string,
     data: Partial<ICandidate>,
-    transaction?: Transaction
+    transaction?: Transaction,
   ): Promise<ICandidate | null> {
     const t = transaction || (await sequelize.transaction());
     const isLocalTransaction = !transaction;

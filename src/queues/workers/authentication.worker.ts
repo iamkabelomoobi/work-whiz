@@ -26,24 +26,24 @@ authenticationQueue.process(async (job: Job<IEmailJob>) => {
         case TEMPLATE_NAMES.PASSWORD_RESET:
           html_template = await ejs.renderFile(
             path.join(TEMPLATES_PATH, 'forgot-password.ejs'),
-            { ...templateData }
+            { ...templateData },
           );
           break;
         case TEMPLATE_NAMES.PASSWORD_SETUP:
           html_template = await ejs.renderFile(
             path.join(TEMPLATES_PATH, 'password-setup.ejs'),
-            { ...templateData }
+            { ...templateData },
           );
           break;
         case TEMPLATE_NAMES.PASSWORD_UPDATE:
           html_template = await ejs.renderFile(
             path.join(TEMPLATES_PATH, 'password-update.ejs'),
-            { ...templateData }
+            { ...templateData },
           );
           break;
         default:
           logger.warn(
-            `Unknown template name in job ${jobId}: ${template.name}`
+            `Unknown template name in job ${jobId}: ${template.name}`,
           );
       }
     }

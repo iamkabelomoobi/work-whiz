@@ -72,7 +72,7 @@ AdminModel.init(
     modelName: 'Admin',
     tableName: 'Admins',
     timestamps: true,
-  }
+  },
 );
 
 export { AdminModel };

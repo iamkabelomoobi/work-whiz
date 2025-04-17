@@ -26,7 +26,7 @@ export default class NotificationUtil {
   public sendEmail = async (
     receiver: string,
     subject: string,
-    html_template: string
+    html_template: string,
   ): Promise<void> => {
     try {
       const mail_options = {
@@ -43,12 +43,12 @@ export default class NotificationUtil {
             if (error) {
               logger.error(
                 `Error sending email to ${receiver} with subject "${subject}":`,
-                error
+                error,
               );
               reject(new Error(`Failed to send email: ${error.message}`));
             } else {
               logger.info(
-                `Email sent to ${receiver} with subject "${subject}"`
+                `Email sent to ${receiver} with subject "${subject}"`,
               );
               resolve();
             }

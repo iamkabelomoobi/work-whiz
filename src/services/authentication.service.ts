@@ -42,7 +42,7 @@ class AuthenticationService {
 
   private createRoleSpecificUser = async (
     role: Role,
-    user: Partial<IAdmin | ICandidate | IEmployer>
+    user: Partial<IAdmin | ICandidate | IEmployer>,
   ): Promise<void> => {
     switch (role) {
       case 'admin':
@@ -102,7 +102,7 @@ class AuthenticationService {
 
   public register = async (
     role: Role,
-    data: IAdminRegister | ICandidateRegister | IEmployerRegister
+    data: IAdminRegister | ICandidateRegister | IEmployerRegister,
   ): Promise<{ message: string }> => {
     const errorMessage = AuthenticationErrorMessages.register;
 
@@ -199,7 +199,7 @@ class AuthenticationService {
    */
   public login = async (
     email: string,
-    password: string
+    password: string,
   ): Promise<{ accessToken: string; refreshToken: string }> => {
     const user = await userRepository.read({ email });
     if (!user) {
@@ -231,7 +231,7 @@ class AuthenticationService {
     const isPasswordValid = await passwordUtil.compareSync(
       user.role,
       password,
-      user.password
+      user.password,
     );
     if (!isPasswordValid) {
       // TODO: implementing failed attempt tracking here
@@ -267,7 +267,7 @@ class AuthenticationService {
         `refresh_token:${user.id}`,
         refreshToken,
         'EX',
-        60 * 60 * 24 * 7
+        60 * 60 * 24 * 7,
       ); // 7 days expiry
 
       return { accessToken, refreshToken };
@@ -356,7 +356,7 @@ class AuthenticationService {
    */
   public setupPassword = async (
     userId: string,
-    password: string
+    password: string,
   ): Promise<{ message: string }> => {
     const errorMessage = AuthenticationErrorMessages.setupPassword;
 
@@ -459,7 +459,7 @@ class AuthenticationService {
    */
   public refreshToken = async (
     userId: string,
-    refreshToken: string
+    refreshToken: string,
   ): Promise<{ accessToken: string; refreshToken?: string }> => {
     let user: IUser;
     try {
@@ -600,7 +600,7 @@ class AuthenticationService {
    *                        - 500 for internal server errors
    */
   public forgotPassword = async (
-    email: string
+    email: string,
   ): Promise<{ message: string }> => {
     const errorMessage = AuthenticationErrorMessages.forgotPassword;
 
@@ -711,7 +711,7 @@ class AuthenticationService {
   public resetPassword = async (
     userId: string,
     password: string,
-    device: { browser: string; os: string; ip: string; timestamp: string }
+    device: { browser: string; os: string; ip: string; timestamp: string },
   ): Promise<{ message: string }> => {
     const errorMessage = AuthenticationErrorMessages.resetPassword;
 
@@ -750,7 +750,7 @@ class AuthenticationService {
       const isSamePassword = await passwordUtil.compareSync(
         user.role,
         password,
-        user.password
+        user.password,
       );
       console.debug('user passwords same?', isSamePassword);
       if (isSamePassword) {

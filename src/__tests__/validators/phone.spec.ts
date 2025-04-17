@@ -10,7 +10,7 @@ describe('phoneValidator', () => {
     const error = phoneValidator('1234567890');
     expect(error).toBeDefined();
     expect(error?.details[0].message).toBe(
-      'Please enter a valid phone number with country code.'
+      'Please enter a valid phone number with country code.',
     );
   });
 
@@ -18,7 +18,7 @@ describe('phoneValidator', () => {
     const error = phoneValidator('+123ABC7890');
     expect(error).toBeDefined();
     expect(error?.details[0].message).toBe(
-      'Please enter a valid phone number with country code.'
+      'Please enter a valid phone number with country code.',
     );
   });
 
@@ -26,7 +26,7 @@ describe('phoneValidator', () => {
     const error = phoneValidator('+123456');
     expect(error).toBeDefined();
     expect(error?.details[0].message).toBe(
-      'Please enter a valid phone number with country code.'
+      'Please enter a valid phone number with country code.',
     );
   });
 
@@ -34,7 +34,7 @@ describe('phoneValidator', () => {
     const error = phoneValidator('+12345678901234567890');
     expect(error).toBeDefined();
     expect(error?.details[0].message).toBe(
-      'Please enter a valid phone number with country code.'
+      'Please enter a valid phone number with country code.',
     );
   });
 
@@ -48,7 +48,7 @@ describe('phoneValidator', () => {
     const error = phoneValidator('+');
     expect(error).toBeDefined();
     expect(error?.details[0].message).toBe(
-      'Please enter a valid phone number with country code.'
+      'Please enter a valid phone number with country code.',
     );
   });
 

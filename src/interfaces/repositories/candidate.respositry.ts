@@ -10,7 +10,7 @@ export interface ICandidateRepository {
   read(query: ICandidateQuery): Promise<ICandidate | null>;
   readAll(
     query: ICandidateQuery,
-    options: IPaginationQueryOptions
+    options: IPaginationQueryOptions,
   ): Promise<{
     candidates: ICandidate[];
     total: number;

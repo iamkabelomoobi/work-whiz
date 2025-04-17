@@ -10,7 +10,7 @@ export interface IUserRepository {
       page: number;
       limit: number;
       sort?: Record<string, 'ASC' | 'DESC'>;
-    }
+    },
   ): Promise<{
     users: IUser[];
     total: number;

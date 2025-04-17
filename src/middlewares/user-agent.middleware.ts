@@ -4,7 +4,7 @@ import { UAParser } from 'ua-parser-js';
 export const userAgentParser = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const userAgent = req.headers['user-agent'];
   if (userAgent) {

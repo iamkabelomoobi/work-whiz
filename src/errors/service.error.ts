@@ -42,7 +42,7 @@ export class ServiceError extends Error {
   public static fromError(
     statusCode: number,
     error: unknown,
-    additionalInfo?: Omit<IServiceErrorDetails, 'message' | 'originalError'>
+    additionalInfo?: Omit<IServiceErrorDetails, 'message' | 'originalError'>,
   ): ServiceError {
     const message = error instanceof Error ? error.message : String(error);
 

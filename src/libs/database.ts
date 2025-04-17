@@ -26,7 +26,7 @@ class DatabaseLib {
           idle: 10000,
         },
         logging: false,
-      }
+      },
     );
   };
 

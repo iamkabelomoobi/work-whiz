@@ -31,7 +31,7 @@ class EmployerRepository implements IEmployerRepository {
    * buildWhereClause({ name: 'tech' });
    */
   private readonly buildWhereClause = (
-    query: IEmployerQuery
+    query: IEmployerQuery,
   ): WhereOptions<EmployerModel> => {
     const where: WhereOptions<EmployerModel> = {};
 
@@ -110,7 +110,7 @@ class EmployerRepository implements IEmployerRepository {
    */
   public async create(
     employer: Omit<IEmployer, 'id'>,
-    transaction?: Transaction
+    transaction?: Transaction,
   ): Promise<IEmployer> {
     const t = transaction || (await sequelize.transaction());
     const isLocalTransaction = !transaction;
@@ -179,7 +179,7 @@ class EmployerRepository implements IEmployerRepository {
    */
   public async readAll(
     query: IEmployerQuery,
-    options: IPaginationQueryOptions
+    options: IPaginationQueryOptions,
   ): Promise<{
     employers: IEmployer[];
     total: number;
@@ -230,7 +230,7 @@ class EmployerRepository implements IEmployerRepository {
   public async update(
     id: string,
     data: Partial<IEmployer>,
-    transaction?: Transaction
+    transaction?: Transaction,
   ): Promise<IEmployer | null> {
     const t = transaction || (await sequelize.transaction());
     const isLocalTransaction = !transaction;

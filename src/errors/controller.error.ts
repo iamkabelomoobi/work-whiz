@@ -74,7 +74,7 @@ export class ControllerError extends Error {
   public static fromError(
     statusCode: number,
     error: unknown,
-    additionalInfo?: Omit<IServiceErrorDetails, 'message' | 'originalError'>
+    additionalInfo?: Omit<IServiceErrorDetails, 'message' | 'originalError'>,
   ): ControllerError {
     const message = error instanceof Error ? error.message : String(error);
 

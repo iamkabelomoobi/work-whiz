@@ -37,7 +37,7 @@ export const configureMiddlewares = (app: Application): void => {
           imgSrc: ["'self'", 'data:'],
         },
       },
-    })
+    }),
   );
 
   const allowedOrigins = process.env.CORS_ORIGINS
@@ -57,7 +57,7 @@ export const configureMiddlewares = (app: Application): void => {
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true,
       maxAge: 86400,
-    })
+    }),
   );
 
   app.use(cookieParser());
@@ -72,13 +72,13 @@ export const configureMiddlewares = (app: Application): void => {
   } else {
     const accessLogStream = fs.createWriteStream(
       path.join(__dirname, '../../logs/access.log'),
-      { flags: 'a' }
+      { flags: 'a' },
     );
     app.use(
       morgan('combined', {
         stream: accessLogStream,
-        skip: (req) => req.path === '/healthcheck',
-      })
+        skip: req => req.path === '/healthcheck',
+      }),
     );
   }
 

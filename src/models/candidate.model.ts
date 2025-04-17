@@ -91,7 +91,7 @@ CandidateModel.init(
     modelName: 'Candidate',
     tableName: 'Candidates',
     timestamps: true,
-  }
+  },
 );
 
 export { CandidateModel };

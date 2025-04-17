@@ -10,7 +10,7 @@ export interface IAdminRepository {
       page: number;
       limit: number;
       sort?: Record<string, 'ASC' | 'DESC'>;
-    }
+    },
   ): Promise<{ admins: IAdmin[]; total: number }>;
   update(id: string, data: Partial<IAdmin>): Promise<IAdmin | null>;
 

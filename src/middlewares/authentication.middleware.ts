@@ -19,14 +19,14 @@ class AuthenticationMiddleware {
   public isAuthenticated = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> => {
     const csrfValid = csrfUtil.validate(req);
     if (!csrfValid) {
       responseUtil.sendError(
         res,
         { message: 'Invalid CSRF token' },
-        StatusCodes.FORBIDDEN
+        StatusCodes.FORBIDDEN,
       );
       return;
     }
@@ -40,7 +40,7 @@ class AuthenticationMiddleware {
           message:
             "Missing or invalid API key. Provide it in the 'X-Authorization: Bearer <TOKEN>' header.",
         },
-        StatusCodes.UNAUTHORIZED
+        StatusCodes.UNAUTHORIZED,
       );
       return;
     }
@@ -52,7 +52,7 @@ class AuthenticationMiddleware {
         {
           message: "Invalid Authorization header format. Use 'Bearer <TOKEN>'.",
         },
-        StatusCodes.UNAUTHORIZED
+        StatusCodes.UNAUTHORIZED,
       );
       return;
     }
@@ -71,7 +71,7 @@ class AuthenticationMiddleware {
       responseUtil.sendError(
         res,
         { message: 'Invalid or expired token' },
-        StatusCodes.UNAUTHORIZED
+        StatusCodes.UNAUTHORIZED,
       );
     }
   };

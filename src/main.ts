@@ -33,7 +33,7 @@ startServer(app, {
     windowMs: env.RATE_LIMIT_WINDOW_MS,
     max: env.RATE_LIMIT_MAX_REQUESTS,
   },
-}).catch((error) => {
+}).catch(error => {
   console.error('Failed to start server:', error);
   process.exit(1);
 });

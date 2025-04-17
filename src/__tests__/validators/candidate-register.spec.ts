@@ -23,7 +23,7 @@ describe('candidateRegisterValidator', () => {
     });
 
     expect(result).toBeDefined();
-    const messages = result?.details.map((d) => d.message);
+    const messages = result?.details.map(d => d.message);
     expect(messages).toContain('First name cannot be empty');
   });
 
@@ -37,7 +37,7 @@ describe('candidateRegisterValidator', () => {
     });
 
     expect(result).toBeDefined();
-    const messages = result?.details.map((d) => d.message);
+    const messages = result?.details.map(d => d.message);
     expect(messages).toContain('First name can only contain letters');
   });
 
@@ -51,7 +51,7 @@ describe('candidateRegisterValidator', () => {
     });
 
     expect(result).toBeDefined();
-    const messages = result?.details.map((d) => d.message);
+    const messages = result?.details.map(d => d.message);
     expect(messages).toContain('Last name cannot be empty');
   });
 
@@ -65,7 +65,7 @@ describe('candidateRegisterValidator', () => {
     });
 
     expect(result).toBeDefined();
-    const messages = result?.details.map((d) => d.message);
+    const messages = result?.details.map(d => d.message);
     expect(messages).toContain('Please enter a valid email address.');
   });
 
@@ -79,7 +79,7 @@ describe('candidateRegisterValidator', () => {
     });
 
     expect(result).toBeDefined();
-    const messages = result?.details.map((d) => d.message);
+    const messages = result?.details.map(d => d.message);
     expect(messages).toContain('Phone number cannot be empty.');
   });
 
@@ -93,9 +93,9 @@ describe('candidateRegisterValidator', () => {
     });
 
     expect(result).toBeDefined();
-    const messages = result?.details.map((d) => d.message);
+    const messages = result?.details.map(d => d.message);
     expect(messages).toContain(
-      'Please enter a valid phone number with country code.'
+      'Please enter a valid phone number with country code.',
     );
   });
 
@@ -109,7 +109,7 @@ describe('candidateRegisterValidator', () => {
     });
 
     expect(result).toBeDefined();
-    const messages = result?.details.map((d) => d.message);
+    const messages = result?.details.map(d => d.message);
     expect(messages).toContain('Title cannot be empty');
   });
 });

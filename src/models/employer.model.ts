@@ -115,7 +115,7 @@ EmployerModel.init(
     modelName: 'Employer',
     tableName: 'Employers',
     timestamps: true,
-  }
+  },
 );
 
 export { EmployerModel };

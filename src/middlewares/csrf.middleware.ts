@@ -5,7 +5,7 @@ import { StatusCodes } from 'http-status-codes';
 export const csrfCheckMiddleware = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const isValid = csrfUtil.validate(req);
 
@@ -13,7 +13,7 @@ export const csrfCheckMiddleware = (
     responseUtil.sendError(
       res,
       { message: 'Invalid CSRF token.' },
-      StatusCodes.FORBIDDEN
+      StatusCodes.FORBIDDEN,
     );
   }
 

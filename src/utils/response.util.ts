@@ -22,7 +22,7 @@ class ResponseUtil {
     res: Response,
     data: T,
     statusCode: StatusCodes = StatusCodes.OK,
-    meta?: Record<string, unknown>
+    meta?: Record<string, unknown>,
   ): void {
     const response: ISuccessResponse<T> = {
       status: 'success',
@@ -36,7 +36,7 @@ class ResponseUtil {
   public sendError(
     res: Response,
     error: unknown,
-    statusCode?: StatusCodes
+    statusCode?: StatusCodes,
   ): void {
     const normalizedError = this.normalizeError(error);
     const code =

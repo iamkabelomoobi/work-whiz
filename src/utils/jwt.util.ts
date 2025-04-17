@@ -6,7 +6,7 @@ import { JwtType } from '@work-whiz/types';
 const signAsync = (
   payload: string | object | Buffer,
   secretOrPrivateKey: jwt.Secret,
-  options?: SignOptions
+  options?: SignOptions,
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     jwt.sign(payload, secretOrPrivateKey, options || {}, (err, token) => {
@@ -21,7 +21,7 @@ const signAsync = (
 const verifyAsync = <T>(
   token: string,
   secretOrPublicKey: jwt.Secret,
-  options?: VerifyOptions
+  options?: VerifyOptions,
 ): Promise<T> => {
   return new Promise((resolve, reject) => {
     jwt.verify(token, secretOrPublicKey, options || {}, (err, decoded) => {
@@ -57,7 +57,7 @@ export default class JwtUtil {
     const jwtKey = config?.authentication?.jwt?.[role]?.[secretKeyType];
     if (!jwtKey) {
       throw new Error(
-        `JWT secret key not found for role: ${role}, type: ${secretKeyType}`
+        `JWT secret key not found for role: ${role}, type: ${secretKeyType}`,
       );
     }
     return jwtKey;
