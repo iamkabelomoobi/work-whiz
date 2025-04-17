@@ -11,7 +11,7 @@ interface IEmployer {
   foundedIn?: number;
   isVerified?: boolean;
   userId?: string;
-  user?: IUser;
+  user?: Partial<IUser>;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }

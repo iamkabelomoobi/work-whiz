@@ -2,8 +2,8 @@ import { Transaction } from 'sequelize';
 import { IUser, IUserQuery } from '@work-whiz/interfaces';
 
 export interface IUserRepository {
-  create(user: Omit<IUser, 'id'>): Promise<IUser>;
-  read(query: IUserQuery): Promise<IUser | null>;
+  create(user: Omit<IUser, 'id'>): Promise<IUser | null>;
+  read(query: IUserQuery): Promise<IUser>;
   readAll(
     query: IUserQuery,
     options: {
@@ -18,7 +18,7 @@ export interface IUserRepository {
     currentPage: number;
     perPage: number;
   }>;
-  update(id: string, data: Partial<IUser>): Promise<IUser | null>;
+  update(id: string, data: Partial<IUser>): Promise<IUser>;
   delete(id: string): Promise<boolean>;
 
   withTransaction(t: Transaction): IUserRepository;

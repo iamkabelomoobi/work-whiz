@@ -1,3 +1,5 @@
-export { Permissions } from './permissions';
+export { JwtType } from './jwt.type';
 
-export { Role } from './roles';
+export { Permissions, PERMISSIONS } from './permissions.type';
+
+export { Role } from './roles.type';

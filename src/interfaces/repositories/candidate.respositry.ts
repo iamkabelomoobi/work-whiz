@@ -6,7 +6,7 @@ import {
 } from '@work-whiz/interfaces';
 
 export interface ICandidateRepository {
-  create(candidate: Omit<ICandidate, 'id'>): Promise<ICandidate>;
+  create(candidate: ICandidate): Promise<ICandidate>;
   read(query: ICandidateQuery): Promise<ICandidate | null>;
   readAll(
     query: ICandidateQuery,

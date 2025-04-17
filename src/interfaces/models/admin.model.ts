@@ -7,7 +7,7 @@ interface IAdmin {
   lastName?: string;
   permissions?: Array<Permissions>;
   userId?: string;
-  user?: IUser;
+  user?: Partial<IUser>;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }

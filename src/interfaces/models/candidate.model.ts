@@ -8,7 +8,7 @@ interface ICandidate {
   skills?: Array<string>;
   isEmployed?: boolean;
   userId?: string;
-  user?: IUser;
+  user?: Partial<IUser>;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }
