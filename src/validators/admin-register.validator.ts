@@ -3,14 +3,10 @@
  *
  *
  */
+import { IAdminRegister } from '@work-whiz/interfaces';
 import { adminRegisterSchema } from './schemas/admin-register.schema';
 
-export const adminRegisterValidator = (data: {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-}) => {
+export const adminRegisterValidator = (data: IAdminRegister) => {
   const { error } = adminRegisterSchema.validate(data, {
     abortEarly: false,
   });

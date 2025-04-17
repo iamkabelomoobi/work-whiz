@@ -1,7 +1,13 @@
-export { IsAllowedEmail } from './email.validator';
+export { adminRegisterValidator } from './admin-register.validator';
+
+export { candidateRegisterValidator } from './candidate-register.validator';
+
+export { emailValidator } from './email.validator';
+
+export { employerRegisterValidator } from './employer-register.validator';
 
 export { validateInput } from './input.validator';
 
-export { PasswordDto, IsStrongPassword } from './password.validator';
+export { passwordValidator } from './password.validator';
 
-export { validatePhoneNumber, IsValidPhoneNumber } from './phone.validator';
+export { phoneValidator } from './phone.validator';

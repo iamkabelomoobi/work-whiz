@@ -1,4 +1,4 @@
-import { emailSchema } from "./schemas/email.schema";
+import { emailSchema } from './schemas/email.schema';
 
 export const emailValidator = (email: string) => {
   const { error } = emailSchema.validate(email, {
