@@ -1,4 +1,4 @@
-import {baseRegisterSchema} from '@work-whiz/validators/schemas/base-register.schema'
+import { baseRegisterSchema } from '@work-whiz/validators/schemas/base-register.schema';
 
 describe('baseRegisterSchema', () => {
   it('should pass validation with valid email and phone', () => {
@@ -25,7 +25,9 @@ describe('baseRegisterSchema', () => {
     });
 
     expect(result.error).toBeDefined();
-    expect(result.error?.details[0].message).toMatch(/Phone number is required/);
+    expect(result.error?.details[0].message).toMatch(
+      /Phone number is required/
+    );
   });
 
   it('should fail with invalid email', () => {
@@ -35,7 +37,9 @@ describe('baseRegisterSchema', () => {
     });
 
     expect(result.error).toBeDefined();
-    expect(result.error?.details[0].message).toBe('Please enter a valid email address.');
+    expect(result.error?.details[0].message).toBe(
+      'Please enter a valid email address.'
+    );
   });
 
   it('should fail with invalid phone (no country code)', () => {
@@ -55,7 +59,7 @@ describe('baseRegisterSchema', () => {
 
     expect(result.error).toBeDefined();
     const messages = result.error?.details.map((d) => d.message);
-    
+
     expect(messages).toContain('Email is required and cannot be empty.');
     expect(messages).toContain('Phone number is required.');
   });

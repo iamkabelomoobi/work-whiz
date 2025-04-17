@@ -94,7 +94,9 @@ describe('candidateRegisterValidator', () => {
 
     expect(result).toBeDefined();
     const messages = result?.details.map((d) => d.message);
-    expect(messages).toContain('Please enter a valid phone number with country code.');
+    expect(messages).toContain(
+      'Please enter a valid phone number with country code.'
+    );
   });
 
   it('should fail with missing title', () => {
