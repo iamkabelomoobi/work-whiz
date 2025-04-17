@@ -6,7 +6,7 @@ import {
   IAdminRepository,
   IPaginationQueryOptions,
 } from '@work-whiz/interfaces';
-import { AdminTransformer } from '@work-whiz/transformers';
+import { toIAdminDTO } from '@work-whiz/dtos';
 import { RepositoryError } from '@work-whiz/errors';
 import { Pagination } from '@work-whiz/utils';
 import { sequelize } from '@work-whiz/libs';
@@ -125,7 +125,7 @@ class AdminRepository implements IAdminRepository {
         await t.commit();
       }
 
-      return AdminTransformer.toResponseDto(newAdmin);
+      return toIAdminDTO(newAdmin);
     } catch (error) {
       if (isLocalTransaction) {
         await t.rollback();
@@ -144,10 +144,18 @@ class AdminRepository implements IAdminRepository {
     try {
       const admin = await this.adminModel.scope('withUser').findOne({
         where: this.buildWhereClause(query),
-        include: [{ model: UserModel, as: 'user' }],
+        include: [
+          {
+            model: UserModel,
+            as: 'user',
+            attributes: {
+              exclude: ['password'],
+            },
+          },
+        ],
         ...this.getOptions(),
       });
-      return admin ? AdminTransformer.toResponseDto(admin) : null;
+      return admin ? toIAdminDTO(admin) : null;
     } catch (error) {
       throw new RepositoryError('Failed to retrieve admin record', error);
     }
@@ -174,7 +182,15 @@ class AdminRepository implements IAdminRepository {
     try {
       const { rows, count } = await this.adminModel.findAndCountAll({
         where: this.buildWhereClause(query),
-        include: [{ model: UserModel, as: 'user' }],
+        include: [
+          {
+            model: UserModel,
+            as: 'user',
+            attributes: {
+              exclude: ['password'],
+            },
+          },
+        ],
         offset: pagination.getOffset(),
         limit: pagination.limit,
         order: pagination.getOrder() ?? [['createdAt', 'ASC']],
@@ -182,7 +198,7 @@ class AdminRepository implements IAdminRepository {
       });
 
       return {
-        admins: rows.map(AdminTransformer.toResponseDto),
+        admins: rows.map(toIAdminDTO),
         total: count,
         totalPages: pagination.getTotalPages(count),
         currentPage: pagination.page,
@@ -220,7 +236,7 @@ class AdminRepository implements IAdminRepository {
         if (isLocalTransaction) {
           await t.commit();
         }
-        return AdminTransformer.toResponseDto(updatedAdmin);
+        return toIAdminDTO(updatedAdmin);
       }
 
       if (isLocalTransaction) {

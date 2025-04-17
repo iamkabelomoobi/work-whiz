@@ -6,10 +6,10 @@ import {
   ICandidateRepository,
   IPaginationQueryOptions,
 } from '@work-whiz/interfaces';
-import { CandidateTransformer } from '@work-whiz/transformers';
 import { RepositoryError } from '@work-whiz/errors';
 import { Pagination } from '@work-whiz/utils';
 import { sequelize } from '@work-whiz/libs';
+import { toICandidateDTO } from '@work-whiz/dtos';
 
 /**
  * Repository class for handling Candidate entity database operations
@@ -117,7 +117,7 @@ class CandidateRepository implements ICandidateRepository {
 
   /**
    * Creates a new candidate record
-   * @param {Omit<ICandidate, 'id'>} candidate - Candidate data without id
+   * @param {ICandidate} candidate - Candidate data without id
    * @param {Transaction} [transaction] - Optional transaction
    * @returns {Promise<ICandidate>} The created candidate DTO
    * @throws {RepositoryError} If creation fails
@@ -125,7 +125,7 @@ class CandidateRepository implements ICandidateRepository {
    * await candidateRepository.create({ firstName: 'John', ... });
    */
   public async create(
-    candidate: Omit<ICandidate, 'id'>,
+    candidate: ICandidate,
     transaction?: Transaction
   ): Promise<ICandidate> {
     const t = transaction || (await sequelize.transaction());
@@ -141,7 +141,7 @@ class CandidateRepository implements ICandidateRepository {
         await t.commit();
       }
 
-      return CandidateTransformer.toResponseDto(newCandidate);
+      return toICandidateDTO(newCandidate);
     } catch (error) {
       if (isLocalTransaction) {
         await t.rollback();
@@ -163,10 +163,18 @@ class CandidateRepository implements ICandidateRepository {
     try {
       const candidate = await this.candidateModel.findOne({
         where: this.buildWhereClause(query),
-        include: [{ model: UserModel, as: 'user' }],
+        include: [
+          {
+            model: UserModel,
+            as: 'user',
+            attributes: {
+              exclude: ['password'],
+            },
+          },
+        ],
         ...this.getOptions(),
       });
-      return candidate ? CandidateTransformer.toResponseDto(candidate) : null;
+      return candidate ? toICandidateDTO(candidate) : null;
     } catch (error) {
       throw new RepositoryError('Failed to retrieve candidate', error);
     }
@@ -200,7 +208,15 @@ class CandidateRepository implements ICandidateRepository {
     try {
       const { rows, count } = await this.candidateModel.findAndCountAll({
         where: this.buildWhereClause(query),
-        include: [{ model: UserModel, as: 'user' }],
+        include: [
+          {
+            model: UserModel,
+            as: 'user',
+            attributes: {
+              exclude: ['password'],
+            },
+          },
+        ],
         offset: pagination.getOffset(),
         limit: pagination.limit,
         order: pagination.getOrder(),
@@ -208,7 +224,7 @@ class CandidateRepository implements ICandidateRepository {
       });
 
       return {
-        candidates: rows.map(CandidateTransformer.toResponseDto),
+        candidates: rows.map(toICandidateDTO),
         total: count,
         totalPages: pagination.getTotalPages(count),
         currentPage: pagination.page,

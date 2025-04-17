@@ -6,10 +6,10 @@ import {
   IEmployerRepository,
   IPaginationQueryOptions,
 } from '@work-whiz/interfaces';
-import { EmployerTransformer } from '@work-whiz/transformers';
 import { sequelize } from '@work-whiz/libs';
 import { RepositoryError } from '@work-whiz/errors';
 import { Pagination } from '@work-whiz/utils';
+import { toIEmployerDTO } from '@work-whiz/dtos';
 
 /**
  * Repository class for handling Employer entity database operations
@@ -125,7 +125,7 @@ class EmployerRepository implements IEmployerRepository {
         await t.commit();
       }
 
-      return EmployerTransformer.toResponseDto(newEmployer);
+      return toIEmployerDTO(newEmployer);
     } catch (error) {
       if (isLocalTransaction) {
         await t.rollback();
@@ -147,10 +147,18 @@ class EmployerRepository implements IEmployerRepository {
     try {
       const employer = await this.employerModel.findOne({
         where: this.buildWhereClause(query),
-        include: [{ model: UserModel, as: 'user' }],
+        include: [
+          {
+            model: UserModel,
+            as: 'user',
+            attributes: {
+              exclude: ['password'],
+            },
+          },
+        ],
         ...this.getOptions(),
       });
-      return employer ? EmployerTransformer.toResponseDto(employer) : null;
+      return employer ? toIEmployerDTO(employer) : null;
     } catch (error) {
       throw new RepositoryError('Failed to retrieve employer', error);
     }
@@ -182,17 +190,25 @@ class EmployerRepository implements IEmployerRepository {
     const pagination = new Pagination(options);
 
     try {
-      const { rows, count } = await this.employerModel
-        .findAndCountAll({
-          where: this.buildWhereClause(query),
-          offset: pagination.getOffset(),
-          limit: pagination.limit,
-          order: pagination.getOrder(),
-          ...this.getOptions(),
-        });
+      const { rows, count } = await this.employerModel.findAndCountAll({
+        where: this.buildWhereClause(query),
+        include: [
+          {
+            model: UserModel,
+            as: 'user',
+            attributes: {
+              exclude: ['password'],
+            },
+          },
+        ],
+        offset: pagination.getOffset(),
+        limit: pagination.limit,
+        order: pagination.getOrder(),
+        ...this.getOptions(),
+      });
 
       return {
-        employers: rows.map(EmployerTransformer.toResponseDto),
+        employers: rows.map(toIEmployerDTO),
         total: count,
         totalPages: pagination.getTotalPages(count),
         currentPage: pagination.page,

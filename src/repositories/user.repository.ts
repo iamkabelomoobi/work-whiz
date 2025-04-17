@@ -1,6 +1,7 @@
 import { Op, WhereOptions, Transaction } from 'sequelize';
 import { sequelize } from '@work-whiz/libs';
 import { UserModel } from '@work-whiz/models';
+import { toIUserDTO } from '@work-whiz/dtos';
 import {
   IUser,
   IUserQuery,
@@ -9,7 +10,6 @@ import {
 } from '@work-whiz/interfaces';
 import { RepositoryError } from '@work-whiz/errors';
 import { Pagination } from '@work-whiz/utils';
-import { UserTransformer } from '@work-whiz/transformers';
 
 /**
  * Repository class for handling User entity database operations
@@ -105,7 +105,7 @@ class UserRepository implements IUserRepository {
 
   /**
    * Creates a new user record
-   * @param {Omit<IUser, 'id'>} user - User data without id
+   * @param {Partial<IUser>} user - User data without id
    * @param {Transaction} [transaction] - Optional transaction
    * @returns {Promise<IUser>} The created user DTO
    * @throws {RepositoryError} If creation fails
@@ -113,7 +113,7 @@ class UserRepository implements IUserRepository {
    * await userRepository.create({ email: 'test@example.com', ... });
    */
   public async create(
-    user: Omit<IUser, 'id'>,
+    user: Partial<IUser>,
     transaction?: Transaction
   ): Promise<IUser> {
     const t = transaction || (await sequelize.transaction());
@@ -129,7 +129,7 @@ class UserRepository implements IUserRepository {
         await t.commit();
       }
 
-      return UserTransformer.toResponseDto(newUser);
+      return toIUserDTO(newUser);
     } catch (error) {
       if (isLocalTransaction) {
         await t.rollback();
@@ -141,7 +141,7 @@ class UserRepository implements IUserRepository {
   /**
    * Retrieves a single user by query criteria
    * @param {IUserQuery} query - Search criteria
-   * @returns {Promise<IUser | null>} User DTO if found, null otherwise
+   * @returns {Promise<IUser>} User DTO if found, null otherwise
    * @throws {RepositoryError} If query fails
    * @example
    * // Find by email
@@ -154,8 +154,9 @@ class UserRepository implements IUserRepository {
         ...this.getOptions(),
       });
 
-      return user ? UserTransformer.toDto(user) : null;
+      return user ? toIUserDTO(user) : null;
     } catch (error) {
+      console.error(error);
       throw new RepositoryError('Failed to retrieve user', error);
     }
   }
@@ -195,7 +196,12 @@ class UserRepository implements IUserRepository {
       });
 
       return {
-        users: rows.map(UserTransformer.toResponseDto),
+        users: rows.map((user) =>
+          toIUserDTO({
+            ...user.get({ plain: true }),
+            avatarUrl: user.avatarUrl || '',
+          })
+        ),
         total: count,
         totalPages: pagination.getTotalPages(count),
         currentPage: pagination.page,
@@ -211,14 +217,14 @@ class UserRepository implements IUserRepository {
    * @param {string} id - User ID to update
    * @param {Partial<IUser>} data - Data to update
    * @param {Transaction} [transaction] - Optional transaction
-   * @returns {Promise<IUser | null>} Updated user DTO if found, null otherwise
+   * @returns {Promise<IUser>} Updated user DTO if found, null otherwise
    * @throws {RepositoryError} If update fails
    */
   public async update(
     id: string,
     data: Partial<IUser>,
     transaction?: Transaction
-  ): Promise<IUser | null> {
+  ): Promise<IUser> {
     const t = transaction || (await sequelize.transaction());
     const isLocalTransaction = !transaction;
 
@@ -233,7 +239,7 @@ class UserRepository implements IUserRepository {
         if (isLocalTransaction) {
           await t.commit();
         }
-        return UserTransformer.toDto(updatedUser);
+        return toIUserDTO(updatedUser);
       }
 
       if (isLocalTransaction) {
