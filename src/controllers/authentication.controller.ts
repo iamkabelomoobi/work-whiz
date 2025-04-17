@@ -14,7 +14,6 @@ import {
   candidateRegisterValidator,
   employerRegisterValidator,
 } from '@work-whiz/validators';
-import { Role } from '@work-whiz/types';
 
 const SESSION_EXPIRED_MESSAGE = 'Session has expired';
 const INVALID_CSRF_MESSAGE = 'Invalid CSRF token';
