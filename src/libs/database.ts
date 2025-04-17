@@ -3,7 +3,6 @@
 import { Redis } from 'ioredis';
 import { Sequelize, Dialect } from 'sequelize';
 import { config } from '@work-whiz/configs/config';
-import { logger } from '@work-whiz/utils';
 
 class DatabaseLib {
   private static instance: DatabaseLib;
@@ -26,11 +25,7 @@ class DatabaseLib {
           acquire: 30000,
           idle: 10000,
         },
-        logging: (...debug: any[]) => {
-          if (process.env.NODE_ENV === 'development') {
-            logger.info('Sequelize', debug);
-          }
-        },
+        logging: false,
       }
     );
   };
