@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: work-whiz-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://postgres:postgres@db:5432/workwhiz
+      REDIS_URL: redis://redis:6379
+      NODEMAILER_HOST: maildev
+      NODEMAILER_PORT: 1025
+      NODEMAILER_SECURE: false
+    expose:
+      - '8080' # app runs on 8080 internally
+    depends_on:
+      - db
+      - redis
+      - maildev
+
+  nginx:
+    image: nginx:latest
+    container_name: work-whiz-nginx
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+
+  db:
+    image: postgres:16-alpine
+    container_name: work-whiz-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: workwhiz
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: work-whiz-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+
+  maildev:
+    image: maildev/maildev
+    container_name: work-whiz-maildev
+    restart: unless-stopped
+    ports:
+      - '1080:1080'
+      - '1025:1025'
+
+volumes:
+  pgdata:
