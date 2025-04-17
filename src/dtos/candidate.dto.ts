@@ -1,69 +1,26 @@
-import { Expose, Transform, Type } from 'class-transformer';
-import {
-  IsBoolean,
-  IsDate,
-  IsOptional,
-  IsString,
-  IsUUID,
-  IsArray,
-  ValidateNested,
-} from 'class-validator';
-import { UserResponseDTO } from './user.dto';
+import { ICandidate } from '@work-whiz/interfaces';
 
-export class CandidateDTO {
-  @Expose()
-  @IsUUID()
-  id: string;
-
-  @Expose()
-  @IsOptional()
-  @IsString()
-  firstName?: string;
-
-  @Expose()
-  @IsOptional()
-  @IsString()
-  lastName?: string;
-
-  @Expose()
-  @IsOptional()
-  @IsString()
-  title?: string;
-
-  @Expose()
-  @IsArray()
-  @IsString({ each: true })
-  @Transform(({ value }) => value || [])
-  skills: string[] = [];
-
-  @Expose()
-  @IsBoolean()
-  @Transform(({ value }) => value ?? false)
-  isEmployed: boolean;
-
-  @Expose()
-  @Type(() => UserResponseDTO)
-  @ValidateNested()
-  @IsOptional()
-  user?: UserResponseDTO;
-
-  @Expose()
-  @IsDate()
-  @Transform(({ value }) => (value ? new Date(value) : new Date(0)))
-  createdAt: Date;
-
-  @Expose()
-  @IsDate()
-  @Transform(({ value }) => (value ? new Date(value) : new Date(0)))
-  updatedAt: Date;
-}
-
-// For responses (extends base DTO)
-export class CandidateResponseDTO extends CandidateDTO {
-  @Expose()
-  get fullName() {
-    return (
-      [this.firstName, this.lastName].filter(Boolean).join(' ') || undefined
-    );
-  }
-}
+export const toICandidateDTO = (candidate: ICandidate): ICandidate => {
+  return {
+    id: candidate.id,
+    firstName: candidate.firstName,
+    lastName: candidate.lastName,
+    title: candidate.title,
+    skills: candidate.skills,
+    isEmployed: candidate.isEmployed,
+    user: candidate.user
+      ? {
+          id: candidate.user.id,
+          avatarUrl: candidate.user.avatarUrl,
+          email: candidate.user.email,
+          phone: candidate.user.phone,
+          role: candidate.user.role,
+          isVerified: candidate.user.isVerified,
+          isActive: candidate.user.isActive,
+          isLocked: candidate.user.isLocked,
+          createdAt: candidate.user.createdAt || new Date(),
+          updatedAt: candidate.user.updatedAt || new Date(),
+        }
+      : null,
+  };
+};

@@ -1,58 +1,24 @@
-import { Expose, Transform, Type } from 'class-transformer';
-import {
-  IsArray,
-  IsDate,
-  IsOptional,
-  IsString,
-  IsUUID,
-  IsEnum,
-  ValidateNested,
-} from 'class-validator';
-import { UserResponseDTO } from './user.dto';
-import { Permissions, PERMISSIONS } from '@work-whiz/types';
+import { IAdmin } from '@work-whiz/interfaces';
 
-export class AdminDTO {
-  @Expose()
-  @IsUUID()
-  id: string;
-
-  @Expose()
-  @IsOptional()
-  @IsString()
-  firstName?: string;
-
-  @Expose()
-  @IsOptional()
-  @IsString()
-  lastName?: string;
-
-  @Expose()
-  @IsArray()
-  @IsEnum(PERMISSIONS, { each: true })
-  permissions: Permissions[] = [];
-
-  @Expose()
-  @Type(() => UserResponseDTO)
-  @ValidateNested()
-  @IsOptional()
-  user?: UserResponseDTO;
-
-  @Expose()
-  @IsDate()
-  @Transform(({ value }) => (value ? new Date(value) : new Date(0)))
-  createdAt: Date;
-
-  @Expose()
-  @IsDate()
-  @Transform(({ value }) => (value ? new Date(value) : new Date(0)))
-  updatedAt: Date;
-}
-
-export class AdminResponseDTO extends AdminDTO {
-  @Expose()
-  get fullName() {
-    return (
-      [this.firstName, this.lastName].filter(Boolean).join(' ') || undefined
-    );
-  }
-}
+export const toIAdminDTO = (admin: IAdmin): IAdmin => {
+  return {
+    id: admin.id,
+    firstName: admin.firstName,
+    lastName: admin.lastName,
+    permissions: admin.permissions,
+    user: admin.user
+      ? {
+          id: admin.user.id,
+          avatarUrl: admin.user.avatarUrl,
+          email: admin.user.email,
+          phone: admin.user.phone,
+          role: admin.user.role,
+          isVerified: admin.user.isVerified,
+          isActive: admin.user.isActive,
+          isLocked: admin.user.isLocked,
+          createdAt: admin.user.createdAt || new Date(),
+          updatedAt: admin.user.updatedAt || new Date(),
+        }
+      : null,
+  };
+};
