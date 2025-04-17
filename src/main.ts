@@ -2,6 +2,7 @@
  * Main application entry point
  * Configures Express server with middlewares and starts the server
  */
+import 'reflect-metadata';
 import express, { Application } from 'express';
 import dotenv from 'dotenv';
 import { cleanEnv, num } from 'envalid';

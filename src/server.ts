@@ -1,12 +1,15 @@
+import 'reflect-metadata';
+import '@work-whiz/queues/workers/authentication.worker';
 import dotenv from 'dotenv';
 import http from 'http';
 import ip from 'ip';
 import os from 'os';
 import cluster from 'cluster';
-import { logger } from '@work-whiz/utils';
-import { sequelize } from '@work-whiz/libs';
 import { Application } from 'express';
 import { cleanEnv, num, str } from 'envalid';
+import { logger } from '@work-whiz/utils';
+import { sequelize } from '@work-whiz/libs';
+import { associateModels } from '@work-whiz/models/associate';
 
 dotenv.config();
 
@@ -149,8 +152,6 @@ export const startServer = async (
 ): Promise<http.Server> => {
   const {
     port = env.PORT,
-    syncDatabase = true,
-    forceSync = false,
     enableClusterMode = false,
     enableHealthCheck = true,
     rateLimitOptions = {
@@ -183,21 +184,26 @@ export const startServer = async (
 
   try {
     await sequelize.authenticate();
+
+    associateModels();
+
+    await sequelize.sync({ force: false, alter: true });
+
     logger.info('Database connection established successfully', {
       dbHost: env.POSTGRES_HOST,
       dbName: env.POSTGRES_DATABASE_NAME,
     });
 
-    if (syncDatabase) {
-      await sequelize.sync({
-        force: forceSync,
-        alter: !forceSync && env.NODE_ENV === 'development',
-      });
-      logger.info(`Database sync completed`, {
-        force: forceSync,
-        alter: !forceSync && env.NODE_ENV === 'development',
-      });
-    }
+    // if (syncDatabase) {
+    //   await sequelize.sync({
+    //     force: forceSync,
+    //     alter: !forceSync && env.NODE_ENV === 'development',
+    //   });
+    //   logger.info(`Database sync completed`, {
+    //     force: forceSync,
+    //     alter: !forceSync && env.NODE_ENV === 'development',
+    //   });
+    // }
 
     if (enableHealthCheck) {
       app.get('/health', (req, res) => {
