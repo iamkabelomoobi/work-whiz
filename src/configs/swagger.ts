@@ -1,4 +1,3 @@
-// src/config/swagger.ts
 import swaggerJSDoc from 'swagger-jsdoc';
 
 export const swaggerOptions: swaggerJSDoc.Options = {
@@ -21,10 +20,7 @@ export const swaggerOptions: swaggerJSDoc.Options = {
     },
     security: [{ bearerAuth: [] }],
   },
-  apis: [
-    './src/controllers/*.ts',
-    './src/routes/*.ts'
-  ], // ⬅️ This is the working format
+  apis: ['./src/controllers/*.ts', './src/routes/*.ts'],
 };
 
 export const swaggerSpec = swaggerJSDoc(swaggerOptions);
