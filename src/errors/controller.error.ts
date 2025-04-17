@@ -1,73 +1,87 @@
-import { logger } from '@work-whiz/utils';
-import {
-  IControllerErrorResponse,
-  IControllerErrorOptions,
-  IServiceErrorDetails,
-} from '@work-whiz/interfaces';
-import { ServiceError } from './service.error';
+import { StatusCodes } from 'http-status-codes';
+import { IServiceErrorDetails } from '@work-whiz/interfaces';
+import { logger } from '@work-whiz/utils/logger';
 
 export class ControllerError extends Error {
   public readonly statusCode: number;
-  public readonly serviceName: string;
-  private readonly logData?: Record<string, unknown> | IServiceErrorDetails;
+  public readonly details: IServiceErrorDetails;
+  public readonly timestamp: Date;
+  public readonly shouldLog: boolean;
 
-  constructor(
-    statusCode: number,
-    message: string,
-    options: IControllerErrorOptions
-  ) {
-    super(message);
+  constructor(statusCode: number, details: IServiceErrorDetails | string) {
+    const normalizedDetails: IServiceErrorDetails =
+      typeof details === 'string' ? { message: details } : details;
+
+    super(normalizedDetails.message);
     this.name = 'ControllerError';
     this.statusCode = statusCode;
-    this.serviceName = options.serviceName;
-    this.logData = options.logData;
+    this.timestamp = new Date();
+    this.shouldLog = this.determineIfShouldLog(statusCode);
 
-    this.logError();
+    this.details = {
+      ...normalizedDetails,
+      trace: {
+        stack: this.stack,
+        ...normalizedDetails.trace,
+      },
+    };
+
+    if (this.shouldLog) {
+      this.logError();
+    }
 
     Object.setPrototypeOf(this, ControllerError.prototype);
   }
 
-  private logError() {
-    const logPayload = {
+  private determineIfShouldLog(statusCode: number): boolean {
+    // Log all server errors and selected client errors
+    return (
+      statusCode >= StatusCodes.INTERNAL_SERVER_ERROR ||
+      [
+        StatusCodes.TOO_MANY_REQUESTS,
+        StatusCodes.UNAUTHORIZED,
+        StatusCodes.FORBIDDEN,
+      ].includes(statusCode)
+    );
+  }
+
+  private logError(): void {
+    const logData = {
       statusCode: this.statusCode,
       message: this.message,
-      serviceName: this.serviceName,
-      errorName: this.name,
+      timestamp: this.timestamp,
       stack: this.stack,
-      ...(this.logData && { details: this.logData }),
+      details: this.details,
     };
 
-    if (this.statusCode >= 500) {
-      logger.error(logPayload);
+    if (this.statusCode >= StatusCodes.INTERNAL_SERVER_ERROR) {
+      logger.error('Controller Error', logData);
     } else {
-      logger.warn(logPayload);
+      logger.warn('Controller Warning', logData);
     }
   }
 
-  public toResponse(): IControllerErrorResponse {
+  public toJSON() {
     return {
+      name: this.name,
       statusCode: this.statusCode,
-      error: {
-        message: this.message,
-        serviceName: this.serviceName,
-      },
+      message: this.message,
+      timestamp: this.timestamp.toISOString(),
+      details: this.details,
     };
   }
 
-  public static fromServiceError(
-    serviceError: IServiceErrorDetails | ServiceError,
-    options: IControllerErrorOptions
+  public static fromError(
+    statusCode: number,
+    error: unknown,
+    additionalInfo?: Omit<IServiceErrorDetails, 'message' | 'originalError'>
   ): ControllerError {
-    const message =
-      typeof serviceError === 'string' ? serviceError : serviceError.message;
+    const message = error instanceof Error ? error.message : String(error);
 
-    return new ControllerError(
-      serviceError instanceof ServiceError ? serviceError.statusCode : 500,
+    return new ControllerError(statusCode, {
       message,
-      {
-        ...options,
-        logData: serviceError,
-      }
-    );
+      originalError: error,
+      ...additionalInfo,
+    });
   }
 }
