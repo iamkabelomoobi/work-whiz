@@ -42,8 +42,12 @@
     "pg": "^8.14.1",
     "pg-hstore": "^2.3.4",
     "pm2": "^6.0.5",
+    "reflect-metadata": "^0.2.2",
     "sequelize": "^6.37.6",
-    "tslib": "^2.3.0"
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "tslib": "^2.3.0",
+    "ua-parser-js": "^2.0.3"
   },
   "devDependencies": {
     "@nx/esbuild": "19.4.2",
@@ -67,6 +71,7 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "~18.16.9",
     "@types/nodemailer": "^6.4.17",
+    "@types/swagger-jsdoc": "^6.0.4",
     "@typescript-eslint/eslint-plugin": "^7.3.0",
     "@typescript-eslint/parser": "^7.3.0",
     "esbuild": "^0.19.2",
