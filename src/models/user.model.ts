@@ -1,9 +1,9 @@
-import { DataTypes, Model } from 'sequelize';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Association, DataTypes, Model } from 'sequelize';
 import { sequelize } from '@work-whiz/libs';
 import { IUser } from '@work-whiz/interfaces';
 import { Role } from '@work-whiz/types';
 import { ROLE_ENUM } from '@work-whiz/enums';
-import { AuthenticationModel } from './authentication.model';
 
 /**
  * User database model representing system users
@@ -13,7 +13,7 @@ import { AuthenticationModel } from './authentication.model';
  */
 class UserModel extends Model<IUser> implements IUser {
   public id!: string;
-  public avatarUrl?: string;
+  public avatarUrl!: string;
   public email!: string;
   public phone!: string;
   public password!: string;
@@ -24,29 +24,28 @@ class UserModel extends Model<IUser> implements IUser {
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  /**
-   * Sets up model associations
-   * @param models - Dictionary of model classes
-   */
-  public static associate(models: {
-    AuthenticationModel: typeof AuthenticationModel;
-  }) {
-    UserModel.hasOne(models.AuthenticationModel, {
+  public static associations: {
+    admin: Association<UserModel, any>;
+  };
+
+  public static associate(models: any) {
+    UserModel.hasOne(models.AdminModel, {
       foreignKey: {
         name: 'userId',
         allowNull: false,
       },
-      as: 'authentication',
+      as: 'admin',
       onDelete: 'CASCADE',
-      onUpdate: 'CASCADE',
-      hooks: true,
-      constraints: true,
+    });
+    UserModel.hasOne(models.CandidateModel, {
+      foreignKey: {
+        name: 'userId',
+        allowNull: false,
+      },
+      as: 'candidate',
+      onDelete: 'CASCADE',
     });
   }
-
-  public static readonly associationNames = {
-    authentication: 'authentication' as const,
-  };
 }
 
 UserModel.init(
@@ -67,37 +66,20 @@ UserModel.init(
       type: DataTypes.STRING(255),
       allowNull: false,
       unique: true,
-      validate: {
-        isEmail: true,
-        notEmpty: true,
-        len: [5, 255],
-      },
     },
     phone: {
       type: DataTypes.STRING(20),
       allowNull: false,
       unique: true,
-      validate: {
-        notEmpty: true,
-        len: [8, 20],
-      },
     },
     password: {
-      type: DataTypes.STRING(60),
-      allowNull: false,
-      validate: {
-        notEmpty: true,
-        len: [60, 60],
-      },
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
     role: {
       type: DataTypes.ENUM(...ROLE_ENUM),
       allowNull: false,
       defaultValue: 'candidate',
-      validate: {
-        notEmpty: true,
-        isIn: [ROLE_ENUM],
-      },
     },
     isVerified: {
       type: DataTypes.BOOLEAN,
@@ -120,45 +102,7 @@ UserModel.init(
     modelName: 'User',
     tableName: 'Users',
     timestamps: true,
-    paranoid: true,
-    indexes: [
-      {
-        name: 'users_email_index',
-        fields: ['email'],
-        unique: true,
-      },
-      {
-        name: 'users_phone_index',
-        fields: ['phone'],
-        unique: true,
-      },
-      {
-        name: 'users_role_filter_index',
-        fields: ['role', 'isActive', 'isVerified', 'isLocked'],
-      },
-      {
-        name: 'users_email_trgm_index',
-        fields: ['email'],
-        using: 'GIN',
-        operator: 'gin_trgm_ops',
-      },
-      {
-        name: 'users_phone_trgm_index',
-        fields: ['phone'],
-        using: 'GIN',
-        operator: 'gin_trgm_ops',
-      },
-      {
-        name: 'users_verification_status_index',
-        fields: ['isVerified'],
-        where: { isVerified: false },
-      },
-    ],
   }
 );
 
-type UserWithAuthentication = UserModel & {
-  [UserModel.associationNames.authentication]: AuthenticationModel;
-};
-
-export { UserModel, UserWithAuthentication };
+export { UserModel };

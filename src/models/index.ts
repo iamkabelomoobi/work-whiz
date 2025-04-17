@@ -1,6 +1,6 @@
 export { AdminModel } from './admin.model';
 
-export { AuthenticationModel } from './authentication.model';
+export { models, associateModels } from './associate';
 
 export { CandidateModel } from './candidate.model';
 

@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DataTypes, Model, Association } from 'sequelize';
-import { UserModel } from './user.model';
 import { sequelize } from '@work-whiz/libs';
 import { ICandidate } from '@work-whiz/interfaces';
 import { TITLE_ENUM } from '@work-whiz/enums';
@@ -21,13 +21,11 @@ class CandidateModel extends Model<ICandidate> implements ICandidate {
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  public readonly user?: UserModel;
-
   public static associations: {
-    user: Association<CandidateModel, UserModel>;
+    user: Association<CandidateModel, any>;
   };
 
-  public static associate(models: { UserModel: typeof UserModel }) {
+  public static associate(models: any) {
     CandidateModel.belongsTo(models.UserModel, {
       foreignKey: {
         name: 'userId',
@@ -40,10 +38,6 @@ class CandidateModel extends Model<ICandidate> implements ICandidate {
       constraints: true,
     });
   }
-
-  public static associationNames = {
-    user: 'user' as const,
-  };
 }
 
 CandidateModel.init(
@@ -97,53 +91,7 @@ CandidateModel.init(
     modelName: 'Candidate',
     tableName: 'Candidates',
     timestamps: true,
-    indexes: [
-      {
-        name: 'candidates_userId_unique_idx',
-        fields: ['userId'],
-        unique: true,
-      },
-      {
-        name: 'candidates_employment_status_idx',
-        fields: ['isEmployed'],
-        where: { isEmployed: true },
-      },
-      {
-        name: 'candidates_skills_gin_idx',
-        fields: ['skills'],
-        using: 'GIN',
-        operator: 'gin_trgm_ops',
-      },
-      {
-        name: 'candidates_firstname_trgm_idx',
-        fields: ['firstName'],
-        using: 'GIN',
-        operator: 'gin_trgm_ops',
-      },
-      {
-        name: 'candidates_lastname_trgm_idx',
-        fields: ['lastName'],
-        using: 'GIN',
-        operator: 'gin_trgm_ops',
-      },
-      {
-        name: 'candidates_title_idx',
-        fields: ['title'],
-      },
-      {
-        name: 'candidates_created_at_idx',
-        fields: ['createdAt'],
-      },
-      {
-        name: 'candidates_name_composite_idx',
-        fields: ['firstName', 'lastName'],
-      },
-    ],
   }
 );
 
-type CandidateWithUser = CandidateModel & {
-  [CandidateModel.associationNames.user]: UserModel;
-};
-
-export { CandidateModel, TITLE_ENUM, CandidateWithUser };
+export { CandidateModel };

@@ -1,7 +1,8 @@
-import { DataTypes, Model, Association, Op } from 'sequelize';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { DataTypes, Model, Association } from 'sequelize';
 import { UserModel } from './user.model';
 import { sequelize } from '@work-whiz/libs';
-import { IEmployer, IModelDictionary } from '@work-whiz/interfaces';
+import { IEmployer } from '@work-whiz/interfaces';
 
 /**
  * Employer database model representing companies/organizations
@@ -26,20 +27,22 @@ class EmployerModel extends Model<IEmployer> implements IEmployer {
   public readonly user?: UserModel;
 
   public static associations: {
-    user: Association<EmployerModel, UserModel>;
+    user: Association<EmployerModel, any>;
   };
 
-  public static associate(models: IModelDictionary) {
+  public static associate(models: any) {
     EmployerModel.belongsTo(models.UserModel, {
-      foreignKey: 'userId',
+      foreignKey: {
+        name: 'userId',
+        allowNull: false,
+      },
       as: 'user',
       onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+      hooks: true,
+      constraints: true,
     });
   }
-
-  public static associationNames = {
-    user: 'user' as const,
-  };
 }
 
 EmployerModel.init(
@@ -106,68 +109,13 @@ EmployerModel.init(
       allowNull: false,
       defaultValue: false,
     },
-    userId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-      references: {
-        model: 'Users',
-        key: 'id',
-      },
-    },
   },
   {
     sequelize,
     modelName: 'Employer',
     tableName: 'Employers',
     timestamps: true,
-    indexes: [
-      {
-        name: 'employers_userId_unique_idx',
-        fields: ['userId'],
-        unique: true,
-      },
-      {
-        name: 'employers_name_trgm_idx',
-        fields: ['name'],
-        using: 'GIN',
-        operator: 'gin_trgm_ops',
-      },
-      {
-        name: 'employers_industry_partial_idx',
-        fields: ['industry'],
-        where: { industry: { [Op.not]: null } },
-      },
-      {
-        name: 'employers_size_idx',
-        fields: ['size'],
-      },
-      {
-        name: 'employers_verified_status_idx',
-        fields: ['isVerified'],
-        where: { isVerified: true },
-      },
-      {
-        name: 'employers_location_trgm_idx',
-        fields: ['location'],
-        using: 'GIN',
-        operator: 'gin_trgm_ops',
-      },
-      {
-        name: 'employers_industry_size_composite_idx',
-        fields: ['industry', 'size'],
-      },
-      {
-        name: 'employers_description_trgm_idx',
-        fields: ['description'],
-        using: 'GIN',
-        operator: 'gin_trgm_ops',
-      },
-    ],
   }
 );
 
-type EmployerWithUser = EmployerModel & {
-  [EmployerModel.associationNames.user]: UserModel;
-};
-
-export { EmployerModel, EmployerWithUser };
+export { EmployerModel };
