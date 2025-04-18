@@ -55,11 +55,18 @@ class ResponseUtil {
 
     if (shouldLog) {
       logger.error({
-        ...response,
-        stack: normalizedError.stack,
+        status: response.status,
+        statusCode: response.statusCode,
+        error: { message: response.error.message },
+        timestamp: response.timestamp,
       });
     } else {
-      logger.warn(response);
+      logger.warn({
+        status: response.status,
+        statusCode: response.statusCode,
+        error: { message: response.error.message },
+        timestamp: response.timestamp,
+      });
     }
 
     res.status(code).json(response);
