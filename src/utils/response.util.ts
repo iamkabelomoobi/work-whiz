@@ -51,7 +51,12 @@ class ResponseUtil {
       timestamp: new Date().toISOString(),
     }
 
-    logger.error(payload)
+    logger.error({
+      status: payload.status,
+      statusCode: payload.statusCode,
+      timestamp: payload.timestamp,
+      error: { message: "Error occurred" }, // Generic message for logging
+    })
     response.status(normalizedError.statusCode).json(payload)
   }
 
