@@ -37,4 +37,4 @@ EXPOSE 4200
 RUN npm install -g pm2
 
 # Start the app using PM2
-CMD ["pm2-runtime", "ecosystem.config.js"]
+CMD [ "node", "--env-file=./.env", "./dist/work-whiz/main.js" ]
