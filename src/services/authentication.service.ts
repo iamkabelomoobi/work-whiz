@@ -1,5 +1,4 @@
 import { StatusCodes } from 'http-status-codes';
-
 import { getLocationFromIp, jwtUtil, passwordUtil } from '@work-whiz/utils';
 import { redis } from '@work-whiz/libs';
 import {
@@ -166,7 +165,6 @@ class AuthenticationService {
           'Account created successfully. Please check your email to set your password.',
       };
     } catch (error) {
-      console.log(error);
       throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
         message: errorMessage,
         trace: {
@@ -427,7 +425,6 @@ class AuthenticationService {
           'Password successfully set up. You can now log in to your account.',
       };
     } catch (error) {
-      console.error(error);
       throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
         message: errorMessage,
         trace: {
@@ -717,7 +714,6 @@ class AuthenticationService {
 
     try {
       const user = await userRepository.read({ id: userId });
-      console.debug('fetching user');
       if (!user) {
         throw new ServiceError(StatusCodes.NOT_FOUND, {
           message: 'User account not found',
@@ -730,9 +726,7 @@ class AuthenticationService {
           },
         });
       }
-      console.debug('fetched user');
 
-      console.debug('user account locked?');
       if (user.isLocked) {
         throw new ServiceError(StatusCodes.FORBIDDEN, {
           message: 'Account is locked. Please contact support.',
@@ -745,14 +739,12 @@ class AuthenticationService {
           },
         });
       }
-      console.debug('user account not locked?');
 
       const isSamePassword = await passwordUtil.compareSync(
         user.role,
         password,
         user.password,
       );
-      console.debug('user passwords same?', isSamePassword);
       if (isSamePassword) {
         throw new ServiceError(StatusCodes.BAD_REQUEST, {
           message: 'New password cannot be the same as your current password',
@@ -765,7 +757,6 @@ class AuthenticationService {
           },
         });
       }
-      console.debug('user passwords not same?');
 
       // check for compromised password
       // const isPasswordLeaked = await passwordUtil.checkLeakedPassword(
@@ -786,18 +777,14 @@ class AuthenticationService {
       //   });
       // }
 
-      console.debug('hashing user passwords');
       const hashedPassword = await passwordUtil.hashSync(user.role, password);
       await userRepository.update(user.id, {
         password: hashedPassword,
       });
-      console.debug('user password updated', hashedPassword);
       await redis.del(`refresh_token:${user.id}`);
       await redis.del(`password_reset:${user.id}`);
 
-      console.log('getting device location', device.ip);
       const deviceLocation = await getLocationFromIp('24.48.0.1');
-      console.debug('device location', deviceLocation);
       await authenticationQueue.add({
         email: user.email,
         subject: 'Your Password Was Changed',
