@@ -4,6 +4,12 @@ import {
   authenticationMiddleware,
   authorizationMiddleare,
   userAgentParser,
+  registerLimiter,
+  loginLimiter,
+  logoutLimiter,
+  forgotPasswordLimiter,
+  resetPasswordLimiter,
+  setupPasswordLimiter,
 } from '@work-whiz/middlewares';
 
 /**
@@ -23,7 +29,7 @@ export class AuthenticationRoutes {
          * @route POST /register
          * @description Register a new user
          */
-        .post('/register', authenticationController.register)
+        .post('/register', registerLimiter, authenticationController.register)
 
         /**
          * @route POST /password/set
@@ -31,6 +37,7 @@ export class AuthenticationRoutes {
          */
         .post(
           '/password/set',
+          setupPasswordLimiter,
           authorizationMiddleare.authorizePasswordSetup,
           authenticationController.setupPassword,
         )
@@ -39,7 +46,7 @@ export class AuthenticationRoutes {
          * @route POST /login
          * @description Login an existing user
          */
-        .post('/login', authenticationController.login)
+        .post('/login', loginLimiter, authenticationController.login)
 
         /**
          * @route DELETE /logout
@@ -47,6 +54,7 @@ export class AuthenticationRoutes {
          */
         .delete(
           '/logout',
+          logoutLimiter,
           authenticationMiddleware.isAuthenticated,
           authenticationController.logout,
         )
@@ -55,7 +63,11 @@ export class AuthenticationRoutes {
          * @route POST /password/recover
          * @description Request a password reset
          */
-        .post('/password/recover', authenticationController.forgotPassword)
+        .post(
+          '/password/recover',
+          forgotPasswordLimiter,
+          authenticationController.forgotPassword,
+        )
 
         /**
          * @route PATCH /password/change
@@ -63,6 +75,7 @@ export class AuthenticationRoutes {
          */
         .patch(
           '/password/change',
+          resetPasswordLimiter,
           authorizationMiddleare.authorizePasswordReset,
           userAgentParser,
           authenticationController.resetPassword,
