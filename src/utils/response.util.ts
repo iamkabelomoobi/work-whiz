@@ -1,130 +1,90 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Response } from 'express';
-import { StatusCodes } from 'http-status-codes';
-import { logger } from './logger';
-import { ISuccessResponse, IErrorResponse } from '@work-whiz/interfaces';
+import { logger } from "./logger"
+import { Response } from "express"
+
+type NormalizedError = {
+  status: "error"
+  statusCode: number
+  message: string
+  details?: Record<string, unknown>
+}
 
 class ResponseUtil {
-  private static instance: ResponseUtil;
-
-  private constructor() {
-    //
-  }
-
-  public static getInstance = (): ResponseUtil => {
-    if (!ResponseUtil.instance) {
-      ResponseUtil.instance = new ResponseUtil();
-    }
-    return ResponseUtil.instance;
-  };
-
-  public sendSuccess<T>(
-    res: Response,
-    data: T,
-    statusCode: StatusCodes = StatusCodes.OK,
-    meta?: Record<string, unknown>,
-  ): void {
-    const response: ISuccessResponse<T> = {
-      status: 'success',
-      data,
-      ...(meta && { meta }),
-    };
-
-    res.status(statusCode).json(response);
-  }
-
-  public sendError(
-    res: Response,
-    error: unknown,
-    statusCode?: StatusCodes,
-  ): void {
-    const normalizedError = this.normalizeError(error);
-    const code =
-      statusCode ||
-      normalizedError.statusCode ||
-      StatusCodes.INTERNAL_SERVER_ERROR;
-    const shouldLog = code >= StatusCodes.INTERNAL_SERVER_ERROR;
-
-    const response: IErrorResponse = {
-      status: 'error',
+  public sendSuccess<T>(response: Response, data: T, message = "Success", statusCode = 200) {
+    const payload = {
+      status: "success",
       statusCode,
-      error: { message: normalizedError.message },
-      ...(normalizedError.details && { details: this.sanitizeDetails(normalizedError.details) }),
+      data,
+      message,
       timestamp: new Date().toISOString(),
-    };
-
-    if (shouldLog) {
-      logger.error({
-        status: response.status,
-        statusCode: response.statusCode,
-        error: { message: this.sanitizeMessage(response.error.message) }, // Details are omitted to prevent logging sensitive data
-        timestamp: response.timestamp,
-      });
-    } else {
-      logger.warn({
-        status: response.status,
-        statusCode: response.statusCode,
-        error: { message: this.sanitizeMessage(response.error.message) }, // Details are omitted to prevent logging sensitive data
-        timestamp: response.timestamp,
-      });
     }
 
-    res.status(code).json(response);
+    logger.info({
+      status: "success",
+      statusCode,
+      message,
+      timestamp: payload.timestamp,
+    })
+
+    response.status(statusCode).json(payload)
   }
-  private normalizeError(error: unknown): {
-    message: string;
-    statusCode?: StatusCodes;
-    details?: Record<string, unknown>;
-    stack?: string;
-  } {
-    if (error instanceof Error) {
-      return {
-        message: error.message,
-        ...('statusCode' in error && { statusCode: (error as any).statusCode }),
-        ...('details' in error && { details: (error as any).details }),
-        stack: error.stack,
-      };
+
+  public sendError(response: Response, error: Error | NormalizedError) {
+    const normalizedError: NormalizedError =
+      "status" in error
+        ? error
+        : {
+            status: "error",
+            statusCode: 500,
+            message: error.message,
+          }
+
+    const sanitizedMessage = this.sanitizeMessage(normalizedError.message)
+    const sanitizedDetails = normalizedError.details
+      ? this.sanitizeDetails(normalizedError.details)
+      : undefined
+
+    const payload = {
+      status: "error",
+      statusCode: normalizedError.statusCode,
+      error: { message: sanitizedMessage },
+      ...(sanitizedDetails && { details: sanitizedDetails }),
+      timestamp: new Date().toISOString(),
     }
 
-    if (typeof error === 'object' && error !== null && 'message' in error) {
-      return {
-        message: String((error as any).message),
-        ...('statusCode' in error && { statusCode: (error as any).statusCode }),
-        ...('details' in error && { details: (error as any).details }),
-      };
-    }
-
-    return {
-      message: String(error),
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-    };
+    logger.error(payload)
+    response.status(normalizedError.statusCode).json(payload)
   }
 
   private sanitizeMessage(message: string): string {
-    // Replace sensitive information with a generic message
-    const sensitivePatterns = [/password/i, /email/i, /\bssn\b/i, /\bcredit card\b/i, /token/i, /key/i];
+    const sensitivePatterns = [
+      /password/i,
+      /email/i,
+      /\bssn\b/i,
+      /\bcredit card\b/i,
+      /token/i,
+      /key/i,
+    ]
     for (const pattern of sensitivePatterns) {
       if (pattern.test(message)) {
-        return 'Sensitive information redacted';
+        return "Sensitive information redacted"
       }
     }
-    return message;
+    return message
   }
 
   private sanitizeDetails(details: Record<string, unknown>): Record<string, unknown> {
-    // Recursively sanitize sensitive information in the details object
-    const sanitizedDetails: Record<string, unknown> = {};
+    const sanitizedDetails: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(details)) {
-      if (typeof value === 'string') {
-        sanitizedDetails[key] = this.sanitizeMessage(value);
-      } else if (typeof value === 'object' && value !== null) {
-        sanitizedDetails[key] = this.sanitizeDetails(value as Record<string, unknown>);
+      if (typeof value === "string") {
+        sanitizedDetails[key] = this.sanitizeMessage(value)
+      } else if (typeof value === "object" && value !== null) {
+        sanitizedDetails[key] = this.sanitizeDetails(value as Record<string, unknown>)
       } else {
-        sanitizedDetails[key] = value;
+        sanitizedDetails[key] = value
       }
     }
-    return sanitizedDetails;
+    return sanitizedDetails
   }
 }
 
-export const responseUtil = ResponseUtil.getInstance();
+export const responseUtil = new ResponseUtil()
