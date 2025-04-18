@@ -57,14 +57,14 @@ class ResponseUtil {
       logger.error({
         status: response.status,
         statusCode: response.statusCode,
-        error: { message: this.sanitizeMessage(response.error.message) },
+        error: { message: this.sanitizeMessage(response.error.message) }, // Details are omitted to prevent logging sensitive data
         timestamp: response.timestamp,
       });
     } else {
       logger.warn({
         status: response.status,
         statusCode: response.statusCode,
-        error: { message: this.sanitizeMessage(response.error.message) },
+        error: { message: this.sanitizeMessage(response.error.message) }, // Details are omitted to prevent logging sensitive data
         timestamp: response.timestamp,
       });
     }
@@ -102,8 +102,11 @@ class ResponseUtil {
 
   private sanitizeMessage(message: string): string {
     // Replace sensitive information with a generic message
-    if (message.toLowerCase().includes('password')) {
-      return 'Sensitive information redacted';
+    const sensitivePatterns = [/password/i, /email/i, /\bssn\b/i, /\bcredit card\b/i];
+    for (const pattern of sensitivePatterns) {
+      if (pattern.test(message)) {
+        return 'Sensitive information redacted';
+      }
     }
     return message;
   }
