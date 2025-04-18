@@ -10,11 +10,10 @@ export const csrfCheckMiddleware = (
   const isValid = csrfUtil.validate(req);
 
   if (!isValid) {
-    responseUtil.sendError(
-      res,
-      { message: 'Invalid CSRF token.' },
-      StatusCodes.FORBIDDEN,
-    );
+    responseUtil.sendError(res, {
+      message: 'Invalid CSRF token.',
+      statusCode: StatusCodes.FORBIDDEN,
+    });
   }
 
   next();

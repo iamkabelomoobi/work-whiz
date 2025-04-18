@@ -169,11 +169,10 @@ export class AuthenticationController {
     const userId = req.app.locals.userId;
 
     if (!refreshToken || !userId) {
-      responseUtil.sendError(
-        res,
-        SESSION_EXPIRED_MESSAGE,
-        StatusCodes.UNAUTHORIZED,
-      );
+      responseUtil.sendError(res, {
+        message: SESSION_EXPIRED_MESSAGE,
+        statusCode: StatusCodes.UNAUTHORIZED,
+      });
       return null;
     }
 
@@ -185,7 +184,10 @@ export class AuthenticationController {
    */
   private validateCsrf(req: Request, res: Response): boolean {
     if (!csrfUtil.validate(req)) {
-      responseUtil.sendError(res, INVALID_CSRF_MESSAGE, StatusCodes.FORBIDDEN);
+      responseUtil.sendError(res, {
+        message: INVALID_CSRF_MESSAGE,
+        statusCode: StatusCodes.FORBIDDEN,
+      });
       return false;
     }
     return true;
@@ -200,31 +202,28 @@ export class AuthenticationController {
     res: Response,
   ): boolean {
     if (!email?.trim() || !password?.trim()) {
-      responseUtil.sendError(
-        res,
-        'Email and password are required',
-        StatusCodes.BAD_REQUEST,
-      );
+      responseUtil.sendError(res, {
+        message: 'Email and password are required',
+        statusCode: StatusCodes.BAD_REQUEST,
+      });
       return false;
     }
 
     const emailError = emailValidator(email);
     if (emailError) {
-      responseUtil.sendError(
-        res,
-        emailError.details[0].message,
-        StatusCodes.UNPROCESSABLE_ENTITY,
-      );
+      responseUtil.sendError(res, {
+        message: emailError.details[0].message,
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
       return false;
     }
 
     const passwordError = passwordValidator(password);
     if (passwordError) {
-      responseUtil.sendError(
-        res,
-        passwordError.details[0].message,
-        StatusCodes.UNPROCESSABLE_ENTITY,
-      );
+      responseUtil.sendError(res, {
+        message: passwordError.details[0].message,
+        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+      });
       return false;
     }
 
@@ -288,29 +287,26 @@ export class AuthenticationController {
           );
           break;
         default:
-          return responseUtil.sendError(
-            res,
-            { message: 'Invalid role provided for registration.' },
-            StatusCodes.BAD_REQUEST,
-          );
+          return responseUtil.sendError(res, {
+            message: 'Invalid role provided for registration.',
+            statusCode: StatusCodes.BAD_REQUEST,
+          });
       }
 
       if (registerErrors) {
-        return responseUtil.sendError(
-          res,
-          { message: registerErrors.message },
-          StatusCodes.UNPROCESSABLE_ENTITY,
-        );
+        return responseUtil.sendError(res, {
+          message: registerErrors.message,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        });
       }
 
       const response = await authenticationService.register(role, registerData);
       responseUtil.sendSuccess(res, response);
     } catch (error) {
-      responseUtil.sendError(
-        res,
-        error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      responseUtil.sendError(res, {
+        message: error.message,
+        statusCode: error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   };
 
@@ -341,11 +337,10 @@ export class AuthenticationController {
     try {
       const { email, password } = req.body;
       if (!email || !password) {
-        responseUtil.sendError(
-          res,
-          'Email and password are required',
-          StatusCodes.BAD_REQUEST,
-        );
+        responseUtil.sendError(res, {
+          message: 'Email and password are required',
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
       }
 
       const { accessToken, refreshToken } = await authenticationService.login(
@@ -356,14 +351,17 @@ export class AuthenticationController {
 
       this.setAuthCookies(res, refreshToken, csrfToken);
 
-      responseUtil.sendSuccess(res, { accessToken, csrfToken }, StatusCodes.OK);
+      responseUtil.sendSuccess(
+        res,
+        { accessToken, csrfToken },
+        String(StatusCodes.OK),
+      );
     } catch (error) {
       this.clearAuthCookies(res);
-      responseUtil.sendError(
-        res,
-        error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      responseUtil.sendError(res, {
+        message: error.message,
+        statusCode: error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   };
 
@@ -387,14 +385,13 @@ export class AuthenticationController {
       const response = await authenticationService.logout(userId);
 
       this.clearAuthCookies(res);
-      responseUtil.sendSuccess(res, response, StatusCodes.OK);
+      responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
     } catch (error) {
       this.clearAuthCookies(res);
-      responseUtil.sendError(
-        res,
-        error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      responseUtil.sendError(res, {
+        message: error.message,
+        statusCode: error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   };
 
@@ -424,25 +421,23 @@ export class AuthenticationController {
 
       const passwordError = passwordValidator(password);
       if (passwordError) {
-        return responseUtil.sendError(
-          res,
-          { message: passwordError.details[0].message },
-          StatusCodes.UNPROCESSABLE_ENTITY,
-        );
+        return responseUtil.sendError(res, {
+          message: passwordError.details[0].message,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        });
       }
 
       const response = await authenticationService.setupPassword(
         userId,
         password,
       );
-      responseUtil.sendSuccess(res, response, StatusCodes.OK);
+      responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
     } catch (error) {
       this.clearAuthCookies(res);
-      responseUtil.sendError(
-        res,
-        error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      responseUtil.sendError(res, {
+        message: error.message,
+        statusCode: error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   };
 
@@ -483,15 +478,14 @@ export class AuthenticationController {
       responseUtil.sendSuccess(
         res,
         { accessToken, csrfToken: newCsrfToken },
-        StatusCodes.OK,
+        String(StatusCodes.OK),
       );
     } catch (error) {
       this.clearAuthCookies(res);
-      responseUtil.sendError(
-        res,
-        error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      responseUtil.sendError(res, {
+        message: error.message,
+        statusCode: error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   };
 
@@ -523,21 +517,19 @@ export class AuthenticationController {
 
       const emailError = emailValidator(email);
       if (emailError) {
-        return responseUtil.sendError(
-          res,
-          { message: emailError.details[0].message },
-          StatusCodes.UNPROCESSABLE_ENTITY,
-        );
+        return responseUtil.sendError(res, {
+          message: emailError.details[0].message,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        });
       }
 
       const response = await authenticationService.forgotPassword(email);
-      responseUtil.sendSuccess(res, response, StatusCodes.OK);
+      responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
     } catch (error) {
-      responseUtil.sendError(
-        res,
-        error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      responseUtil.sendError(res, {
+        message: error.message,
+        statusCode: error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   };
 
@@ -568,11 +560,10 @@ export class AuthenticationController {
 
       const passwordError = passwordValidator(password);
       if (passwordError) {
-        return responseUtil.sendError(
-          res,
-          { message: passwordError.details[0].message },
-          StatusCodes.UNPROCESSABLE_ENTITY,
-        );
+        return responseUtil.sendError(res, {
+          message: passwordError.details[0].message,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        });
       }
 
       const userAgent = req.app.locals.userAgent;
@@ -587,13 +578,12 @@ export class AuthenticationController {
         },
       );
 
-      responseUtil.sendSuccess(res, response, StatusCodes.OK);
+      responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
     } catch (error) {
-      responseUtil.sendError(
-        res,
-        error.message,
-        error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      responseUtil.sendError(res, {
+        message: error.message,
+        statusCode: error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   };
 }

@@ -34,28 +34,25 @@ class AuthorizationMiddleware {
       }: { password: string; passwordToken: string } = req.body;
 
       if (!password || !passwordToken) {
-        responseUtil.sendError(
-          res,
-          { message: 'Password and token are required.' },
-          StatusCodes.BAD_GATEWAY,
-        );
+        responseUtil.sendError(res, {
+          message: 'Password and token are required.',
+          statusCode: StatusCodes.BAD_GATEWAY,
+        });
       }
 
       const decodedPasswordToken = jwtUtil.decode(passwordToken);
       if (!decodedPasswordToken) {
-        responseUtil.sendError(
-          res,
-          { message: 'Invalid password token.' },
-          StatusCodes.UNAUTHORIZED,
-        );
+        responseUtil.sendError(res, {
+          message: 'Invalid password token.',
+          statusCode: StatusCodes.UNAUTHORIZED,
+        });
       }
 
       if (decodedPasswordToken.type !== 'password_setup') {
-        responseUtil.sendError(
-          res,
-          { message: 'Invalid token type' },
-          StatusCodes.UNAUTHORIZED,
-        );
+        responseUtil.sendError(res, {
+          message: 'Invalid token type',
+          statusCode: StatusCodes.UNAUTHORIZED,
+        });
       }
 
       const verifiedPasswordToken = await jwtUtil.verify({
@@ -64,21 +61,19 @@ class AuthorizationMiddleware {
         type: decodedPasswordToken.type,
       });
       if (!verifiedPasswordToken) {
-        responseUtil.sendError(
-          res,
-          { message: 'Invalid password token' },
-          StatusCodes.UNAUTHORIZED,
-        );
+        responseUtil.sendError(res, {
+          message: 'Invalid password token',
+          statusCode: StatusCodes.UNAUTHORIZED,
+        });
       }
 
       req.app.locals.userId = verifiedPasswordToken.id;
       next();
     } catch (error) {
-      responseUtil.sendError(
-        res,
-        { message: 'Error in authorizing password setup' },
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      responseUtil.sendError(res, {
+        message: 'Error in authorizing password setup',
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      });
     }
   };
 
@@ -97,27 +92,24 @@ class AuthorizationMiddleware {
       const { password, token }: { password: string; token: string } = req.body;
 
       if (!password || !token) {
-        responseUtil.sendError(
-          res,
-          { message: 'Password and token are required.' },
-          StatusCodes.BAD_GATEWAY,
-        );
+        responseUtil.sendError(res, {
+          message: 'Password and token are required.',
+          statusCode: StatusCodes.BAD_GATEWAY,
+        });
       }
 
       const decodedPasswordToken = jwtUtil.decode(token);
       if (!decodedPasswordToken) {
-        responseUtil.sendError(
-          res,
-          { message: 'Invalid password token.' },
-          StatusCodes.UNAUTHORIZED,
-        );
+        responseUtil.sendError(res, {
+          message: 'Invalid password token.',
+          statusCode: StatusCodes.UNAUTHORIZED,
+        });
       }
       if (decodedPasswordToken.type !== 'password_reset') {
-        responseUtil.sendError(
-          res,
-          { message: 'Invalid token type' },
-          StatusCodes.UNAUTHORIZED,
-        );
+        responseUtil.sendError(res, {
+          message: 'Invalid token type',
+          statusCode: StatusCodes.UNAUTHORIZED,
+        });
       }
 
       const verifiedPasswordToken = await jwtUtil.verify({
@@ -126,22 +118,20 @@ class AuthorizationMiddleware {
         type: decodedPasswordToken.type,
       });
       if (!verifiedPasswordToken) {
-        responseUtil.sendError(
-          res,
-          { message: 'Invalid password token' },
-          StatusCodes.UNAUTHORIZED,
-        );
+        responseUtil.sendError(res, {
+          message: 'Invalid password token',
+          statusCode: StatusCodes.UNAUTHORIZED,
+        });
       }
 
       req.app.locals.userId = verifiedPasswordToken.id;
       next();
     } catch (error) {
       console.error(error);
-      responseUtil.sendError(
-        res,
-        { message: 'Invalid or expired token' },
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+      responseUtil.sendError(res, {
+        message: 'Invalid or expired token',
+        statusCode: StatusCodes.UNAUTHORIZED,
+      });
     }
   };
 }

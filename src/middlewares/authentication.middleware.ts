@@ -23,37 +23,30 @@ class AuthenticationMiddleware {
   ): Promise<void> => {
     const csrfValid = csrfUtil.validate(req);
     if (!csrfValid) {
-      responseUtil.sendError(
-        res,
-        { message: 'Invalid CSRF token' },
-        StatusCodes.FORBIDDEN,
-      );
+      responseUtil.sendError(res, {
+        message: 'Invalid CSRF token',
+        statusCode: StatusCodes.FORBIDDEN,
+      });
       return;
     }
 
     const authorizationHeader = req.headers['x-authorization'] as string;
 
     if (!authorizationHeader) {
-      responseUtil.sendError(
-        res,
-        {
-          message:
-            "Missing or invalid API key. Provide it in the 'X-Authorization: Bearer <TOKEN>' header.",
-        },
-        StatusCodes.UNAUTHORIZED,
-      );
+      responseUtil.sendError(res, {
+        message:
+          "Missing or invalid API key. Provide it in the 'X-Authorization: Bearer <TOKEN>' header.",
+        statusCode: StatusCodes.UNAUTHORIZED,
+      });
       return;
     }
 
     const parts = authorizationHeader.split(' ');
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      responseUtil.sendError(
-        res,
-        {
-          message: "Invalid Authorization header format. Use 'Bearer <TOKEN>'.",
-        },
-        StatusCodes.UNAUTHORIZED,
-      );
+      responseUtil.sendError(res, {
+        message: "Invalid Authorization header format. Use 'Bearer <TOKEN>'.",
+        statusCode: StatusCodes.UNAUTHORIZED,
+      });
       return;
     }
 
@@ -68,11 +61,10 @@ class AuthenticationMiddleware {
       req.app.locals.userId = decoded.id;
       next();
     } catch (error) {
-      responseUtil.sendError(
-        res,
-        { message: 'Invalid or expired token' },
-        StatusCodes.UNAUTHORIZED,
-      );
+      responseUtil.sendError(res, {
+        message: 'Invalid or expired token',
+        statusCode: StatusCodes.UNAUTHORIZED,
+      });
     }
   };
 }
