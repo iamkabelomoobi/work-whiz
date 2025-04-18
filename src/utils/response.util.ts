@@ -49,7 +49,7 @@ class ResponseUtil {
       status: 'error',
       statusCode,
       error: { message: normalizedError.message },
-      ...(normalizedError.details && { details: normalizedError.details }),
+      ...(normalizedError.details && { details: this.sanitizeDetails(normalizedError.details) }),
       timestamp: new Date().toISOString(),
     };
 
@@ -102,13 +102,28 @@ class ResponseUtil {
 
   private sanitizeMessage(message: string): string {
     // Replace sensitive information with a generic message
-    const sensitivePatterns = [/password/i, /email/i, /\bssn\b/i, /\bcredit card\b/i];
+    const sensitivePatterns = [/password/i, /email/i, /\bssn\b/i, /\bcredit card\b/i, /token/i, /key/i];
     for (const pattern of sensitivePatterns) {
       if (pattern.test(message)) {
         return 'Sensitive information redacted';
       }
     }
     return message;
+  }
+
+  private sanitizeDetails(details: Record<string, unknown>): Record<string, unknown> {
+    // Recursively sanitize sensitive information in the details object
+    const sanitizedDetails: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(details)) {
+      if (typeof value === 'string') {
+        sanitizedDetails[key] = this.sanitizeMessage(value);
+      } else if (typeof value === 'object' && value !== null) {
+        sanitizedDetails[key] = this.sanitizeDetails(value as Record<string, unknown>);
+      } else {
+        sanitizedDetails[key] = value;
+      }
+    }
+    return sanitizedDetails;
   }
 }
 
