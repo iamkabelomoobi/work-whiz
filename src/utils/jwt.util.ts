@@ -1,4 +1,5 @@
-import jwt, { SignOptions, VerifyOptions } from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
+
 import { config } from '@work-whiz/configs/config';
 import { IJwtToken, IDecodedJwtToken } from '@work-whiz/interfaces';
 import { JwtType } from '@work-whiz/types';
@@ -6,7 +7,7 @@ import { JwtType } from '@work-whiz/types';
 const signAsync = (
   payload: string | object | Buffer,
   secretOrPrivateKey: jwt.Secret,
-  options?: SignOptions,
+  options?: jwt.SignOptions,
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     jwt.sign(payload, secretOrPrivateKey, options || {}, (err, token) => {
@@ -21,7 +22,7 @@ const signAsync = (
 const verifyAsync = <T>(
   token: string,
   secretOrPublicKey: jwt.Secret,
-  options?: VerifyOptions,
+  options?: jwt.VerifyOptions,
 ): Promise<T> => {
   return new Promise((resolve, reject) => {
     jwt.verify(token, secretOrPublicKey, options || {}, (err, decoded) => {
