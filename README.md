@@ -13,12 +13,8 @@
 </pre>
 </div>
 <p align="center">
- <em><code>❯ REPLACE-ME</code></em>
-</p>
-<p align="center">
-
 <img src="https://img.shields.io/github/actions/workflow/status/the-berufegoru/work-whiz/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white&color=0080ff" alt="CI Status">
-<img src="https://img.shields.io/github/actions/workflow/status/the-berufegoru/work-whiz/codeql.yml?branch=main&label=CodeQL&logo=github&logoColor=white&color=yellow" alt="CodeQL Status">
+<img src="https://img.shields.io/github/actions/workflow/status/the-berufegoru/work-whiz/codeql.yml?branch=main&label=CodeQL&logo=github&logoColor=white&color=yellow"**** alt="CodeQL Status">
  <img src="https://img.shields.io/github/license/the-berufegoru/work-whiz?style=default&logo=opensourceinitiative&logoColor=white&color=0080ff" alt="license">
  <img src="https://img.shields.io/github/last-commit/the-berufegoru/work-whiz?style=default&logo=git&logoColor=white&color=0080ff" alt="last-commit">
 
@@ -34,7 +30,8 @@
 
 - [🔗 Table of Contents](#-table-of-contents)
 - [📍 Overview](#-overview)
-- [👾 Features](#-features)
+- [🚀 Feature Set](#-feature-set)
+- [✅ 1. Authentication (DONE)](#-1-authentication-done)
 - [🚀 Getting Started](#-getting-started)
   - [☑️ Prerequisites](#️-prerequisites)
   - [⚙️ Installation](#️-installation)
@@ -49,13 +46,21 @@
 
 ## 📍 Overview
 
-<code>❯ REPLACE-ME</code>
+<code>❯ A is a modern job board platform designed to streamline the hiring process for recruiters and job seekers. It provides an intuitive interface for posting and discovering jobs, managing applications, and building professional profiles — all powered by a secure, role-based authentication system.
+</code>
 
 ---
 
-## 👾 Features
+## 🚀 Feature Set
 
-<code>❯ REPLACE-ME</code>
+## ✅ 1. Authentication (DONE)
+
+- User registration (with roles: `admin`, `recruiter`, `candidate`)
+- Login/logout
+- JWT/session-based authentication
+- Protected routes (auth middleware)
+- Forgot/reset password
+- Email verification (optional upgrade)
 
 ## 🚀 Getting Started
 
