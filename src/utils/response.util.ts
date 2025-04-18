@@ -57,14 +57,14 @@ class ResponseUtil {
       logger.error({
         status: response.status,
         statusCode: response.statusCode,
-        error: { message: response.error.message },
+        error: { message: this.sanitizeMessage(response.error.message) },
         timestamp: response.timestamp,
       });
     } else {
       logger.warn({
         status: response.status,
         statusCode: response.statusCode,
-        error: { message: response.error.message },
+        error: { message: this.sanitizeMessage(response.error.message) },
         timestamp: response.timestamp,
       });
     }
@@ -98,6 +98,14 @@ class ResponseUtil {
       message: String(error),
       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
     };
+  }
+
+  private sanitizeMessage(message: string): string {
+    // Replace sensitive information with a generic message
+    if (message.toLowerCase().includes('password')) {
+      return 'Sensitive information redacted';
+    }
+    return message;
   }
 }
 
