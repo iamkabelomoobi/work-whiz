@@ -1,0 +1,60 @@
+# Node modules (reinstall in container)
+node_modules
+
+# Logs
+logs
+*.log
+pm2.log
+pm2-error.log
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Tests
+coverage
+*.test.*
+*.spec.*
+
+# Build artifacts
+dist
+build
+
+# Environment files (handled with secrets or runtime env)
+.env
+.env.*.local
+
+# PM2-related files
+pids
+pids/*
+*.pid
+*.seed
+*.dump
+pm2.pid
+pm2.log
+pm2-error.log
+.pm2
+ecosystem.config.js # unless you want it in container
+
+# Docker files you don't want copied
+Dockerfile
+.dockerignore
+
+# Editor settings
+.vscode
+.idea
+*.swp
+*.swo
+
+# Cache folders
+.nyc_output
+.cache
+tmp
