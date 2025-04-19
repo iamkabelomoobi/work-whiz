@@ -5,7 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: work-whiz-app1
+    image: work-whiz-app
+    container_name: work-whiz-app
     restart: unless-stopped
     environment:
       NODE_ENV: development
@@ -14,44 +15,12 @@ services:
       NODEMAILER_HOST: maildev
       NODEMAILER_PORT: 1025
       NODEMAILER_SECURE: false
-    expose:
-      - '8080'
-    depends_on:
-      - db
-      - redis
-      - maildev
-
-  app2:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: work-whiz-app2
-    restart: unless-stopped
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: postgres://postgres:postgres@db:5432/workwhiz
-      REDIS_URL: redis://redis:6379
-      NODEMAILER_HOST: maildev
-      NODEMAILER_PORT: 1025
-      NODEMAILER_SECURE: false
-    expose:
-      - '8080'
-    depends_on:
-      - db
-      - redis
-      - maildev
-
-  nginx:
-    image: nginx:latest
-    container_name: work-whiz-nginx
-    restart: unless-stopped
     ports:
-      - '80:80'
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - '8080:8080'  # Changed to standard port 8080
     depends_on:
-      - app1
-      - app2
+      - db
+      - redis
+      - maildev
 
   db:
     image: postgres:16-alpine
@@ -62,7 +31,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: workwhiz
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -71,15 +40,15 @@ services:
     container_name: work-whiz-redis
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - '6380:6379'
 
   maildev:
     image: maildev/maildev
     container_name: work-whiz-maildev
     restart: unless-stopped
     ports:
-      - '1080:1080'
-      - '1025:1025'
+      - '1080:1080'  # Web interface
+      - '1025:1025'  # SMTP port
 
 volumes:
   pgdata:
