@@ -16,7 +16,7 @@ services:
       NODEMAILER_PORT: 1025
       NODEMAILER_SECURE: false
     ports:
-      - '8080:8080'  # Changed to standard port 8080
+      - '8080:8080' # Changed to standard port 8080
     depends_on:
       - db
       - redis
@@ -47,8 +47,8 @@ services:
     container_name: work-whiz-maildev
     restart: unless-stopped
     ports:
-      - '1080:1080'  # Web interface
-      - '1025:1025'  # SMTP port
+      - '1080:1080' # Web interface
+      - '1025:1025' # SMTP port
 
 volumes:
   pgdata:

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { responseUtil, jwtUtil, csrfUtil } from '@work-whiz/utils';
+import { responseUtil, jwtUtil } from '@work-whiz/utils';
 
 class AuthenticationMiddleware {
   private static instance: AuthenticationMiddleware;
@@ -58,11 +58,9 @@ class AuthenticationMiddleware {
         role: 'admin',
       });
 
-      console.log(decoded);
       req.app.locals.userId = decoded.id;
       next();
     } catch (error) {
-      console.error(error);
       responseUtil.sendError(res, {
         message: 'Invalid or expired token',
         statusCode: StatusCodes.UNAUTHORIZED,

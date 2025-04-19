@@ -60,8 +60,8 @@ class ResponseUtil {
       status: payload.status,
       statusCode: payload.statusCode,
       timestamp: payload.timestamp,
-      error: { message: error || 'Error occurred' }, 
-      ...(sanitizedDetails && { details: sanitizedDetails }), 
+      error: { message: error || 'Error occurred' },
+      ...(sanitizedDetails && { details: sanitizedDetails }),
     });
     response.status(normalizedError.statusCode).json(payload);
   }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ServiceError } from '@work-whiz/errors';
 import {
   IAdmin,
@@ -29,7 +30,7 @@ class AdminService implements IAdminService {
     try {
       return await fn();
     } catch (error: any) {
-      console.log(error)
+      console.log(error);
       if (error instanceof ServiceError) throw error;
       throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
         message: 'An unexpected error occurred.',

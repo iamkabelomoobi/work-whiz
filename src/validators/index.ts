@@ -1,4 +1,4 @@
-export {adminValidator} from './admin.validator'
+export { adminValidator } from './admin.validator';
 
 export { adminRegisterValidator } from './admin-register.validator';
 

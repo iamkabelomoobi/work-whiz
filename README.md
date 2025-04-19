@@ -103,7 +103,7 @@ Run work-whiz using the following command:
 ❯ docker build -t work-whiz . && docker run -p 8080:8080 --env-file .env work-whiz
 ```
 
-```
+````
 
 ### 🧪 Testing
 
@@ -112,13 +112,13 @@ Run the test suite using the following command:
 
 ```sh
 ❯ npm run test
-```
+````
 
 ---
 
 ## 📌 Project Roadmap
 
-- [X] **`Task 1`**: <strike>User Authentication</strike>
+- [x] **`Task 1`**: <strike>User Authentication</strike>
 - [ ] **`Task 2`**: Admin Profile Management.
 - [ ] **`Task 3`**: Candidate Profile Management.
 - [ ] **`Task 4`**: Employer Profile Management.

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { adminValidator } from '@work-whiz/validators/admin.validator';
 import { IAdmin } from '@work-whiz/interfaces';
 

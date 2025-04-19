@@ -157,7 +157,7 @@ class AdminRepository implements IAdminRepository {
       });
       return admin ? toIAdminDTO(admin) : null;
     } catch (error) {
-      console.error(error)
+      console.error(error);
       throw new RepositoryError('Failed to retrieve admin record', error);
     }
   }

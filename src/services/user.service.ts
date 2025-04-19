@@ -26,7 +26,7 @@ class Userservice implements IUserService {
   ): Promise<T> {
     try {
       return await fn();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error instanceof ServiceError) throw error;
       throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
