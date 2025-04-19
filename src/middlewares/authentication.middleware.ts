@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { responseUtil, jwtUtil, csrfUtil } from '@work-whiz/utils';
+import { responseUtil, jwtUtil } from '@work-whiz/utils';
 
 class AuthenticationMiddleware {
   private static instance: AuthenticationMiddleware;
@@ -21,14 +21,14 @@ class AuthenticationMiddleware {
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    const csrfValid = csrfUtil.validate(req);
-    if (!csrfValid) {
-      responseUtil.sendError(res, {
-        message: 'Invalid CSRF token',
-        statusCode: StatusCodes.FORBIDDEN,
-      });
-      return;
-    }
+    // const csrfValid = csrfUtil.validate(req);
+    // if (!csrfValid) {
+    //   responseUtil.sendError(res, {
+    //     message: 'Invalid CSRF token',
+    //     statusCode: StatusCodes.FORBIDDEN,
+    //   });
+    //   return;
+    // }
 
     const authorizationHeader = req.headers['x-authorization'] as string;
 

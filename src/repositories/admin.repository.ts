@@ -142,7 +142,7 @@ class AdminRepository implements IAdminRepository {
    */
   public async read(query: IAdminQuery): Promise<IAdmin | null> {
     try {
-      const admin = await this.adminModel.scope('withUser').findOne({
+      const admin = await this.adminModel.findOne({
         where: this.buildWhereClause(query),
         include: [
           {
@@ -157,6 +157,7 @@ class AdminRepository implements IAdminRepository {
       });
       return admin ? toIAdminDTO(admin) : null;
     } catch (error) {
+      console.error(error);
       throw new RepositoryError('Failed to retrieve admin record', error);
     }
   }

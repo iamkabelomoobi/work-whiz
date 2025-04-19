@@ -12,7 +12,7 @@ import { ExpressAdapter } from '@bull-board/express';
 import swaggerUi from 'swagger-ui-express';
 
 import { swaggerSpec } from '@work-whiz/configs/swagger';
-import { AuthenticationRoutes } from '@work-whiz/routes';
+import { AdminRoutes, AuthenticationRoutes } from '@work-whiz/routes';
 import { authenticationQueue } from '@work-whiz/queues';
 
 export const configureMiddlewares = (app: Application): void => {
@@ -25,7 +25,7 @@ export const configureMiddlewares = (app: Application): void => {
   });
 
   app.set('trust proxy', 1);
-  app.set('trust proxy', true);
+  // app.set('trust proxy', true);
 
   app.use(
     helmet({
@@ -91,4 +91,5 @@ export const configureMiddlewares = (app: Application): void => {
   // API Routes
   const API_VERSION = 'v1';
   app.use(`/api/${API_VERSION}/auth`, new AuthenticationRoutes().init());
+  app.use(`/api/${API_VERSION}/admins`, new AdminRoutes().init());
 };

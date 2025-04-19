@@ -2,6 +2,12 @@ import rateLimit from 'express-rate-limit';
 
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
 
+export const profileLimiter = rateLimit({
+  windowMs: FIFTEEN_MINUTES,
+  max: 150,
+  message: 'Too many requests, please try again later.',
+});
+
 export const registerLimiter = rateLimit({
   windowMs: FIFTEEN_MINUTES,
   max: 5,
