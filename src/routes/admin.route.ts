@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { adminController } from '@work-whiz/controllers/admin.controller';
 import { userController } from '@work-whiz/controllers/user.controller';
-import { authenticationMiddleware } from '@work-whiz/middlewares';
+import {
+  profileLimiter,
+  authenticationMiddleware,
+} from '@work-whiz/middlewares';
 
 export class AdminRoutes {
   constructor(private readonly router: Router = Router()) {
@@ -17,6 +20,7 @@ export class AdminRoutes {
          */
         .get(
           '/me',
+          profileLimiter,
           authenticationMiddleware.isAuthenticated,
           adminController.getAdmin,
         )
@@ -26,6 +30,7 @@ export class AdminRoutes {
          */
         .patch(
           '/me',
+          profileLimiter,
           authenticationMiddleware.isAuthenticated,
           adminController.updateAdmin,
         )
@@ -35,6 +40,7 @@ export class AdminRoutes {
          */
         .get(
           '/',
+          profileLimiter,
           authenticationMiddleware.isAuthenticated,
           adminController.getAllAdmins,
         )
@@ -44,6 +50,7 @@ export class AdminRoutes {
          */
         .patch(
           '/me/contact',
+          profileLimiter,
           authenticationMiddleware.isAuthenticated,
           userController.updateContact,
         )
