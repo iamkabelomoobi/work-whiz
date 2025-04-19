@@ -29,7 +29,6 @@ dist
 build
 
 # Environment files (handled with secrets or runtime env)
-.env
 .env.*.local
 
 # PM2-related files

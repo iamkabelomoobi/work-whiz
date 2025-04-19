@@ -30,13 +30,10 @@
 
 - [🔗 Table of Contents](#-table-of-contents)
 - [📍 Overview](#-overview)
-- [🚀 Feature Set](#-feature-set)
-- [✅ 1. Authentication (DONE)](#-1-authentication-done)
 - [🚀 Getting Started](#-getting-started)
   - [☑️ Prerequisites](#️-prerequisites)
   - [⚙️ Installation](#️-installation)
   - [🤖 Usage](#-usage)
-  - [🧪 Testing](#-testing)
 - [📌 Project Roadmap](#-project-roadmap)
 - [🔰 Contributing](#-contributing)
 - [🎗 License](#-license)
@@ -49,24 +46,11 @@
 <code>❯ A is a modern job board platform designed to streamline the hiring process for recruiters and job seekers. It provides an intuitive interface for posting and discovering jobs, managing applications, and building professional profiles — all powered by a secure, role-based authentication system.
 </code>
 
----
-
-## 🚀 Feature Set
-
-## ✅ 1. Authentication (DONE)
-
-- User registration (with roles: `admin`, `recruiter`, `candidate`)
-- Login/logout
-- JWT/session-based authentication
-- Protected routes (auth middleware)
-- Forgot/reset password
-- Email verification (optional upgrade)
-
 ## 🚀 Getting Started
 
 ### ☑️ Prerequisites
 
-Before getting started with work-whiz, ensure your runtime environment meets the following requirements:
+> Before getting started with work-whiz, ensure your runtime environment meets the following requirements:
 
 - **Programming Language:** Error detecting primary_language: {'json': 11, 'ts': 8, 'js': 1, 'yml': 2}
 - **Package Manager:** Npm
@@ -116,7 +100,9 @@ Run work-whiz using the following command:
 **Using `docker`** &nbsp; [<img align="center" src="https://img.shields.io/badge/Docker-2CA5E0.svg?style={badge_style}&logo=docker&logoColor=white" />](https://www.docker.com/)
 
 ```sh
-❯ docker run -it {image_name}
+❯ docker build -t work-whiz . && docker run -p 8080:8080 --env-file .env work-whiz
+```
+
 ```
 
 ### 🧪 Testing
@@ -125,16 +111,17 @@ Run the test suite using the following command:
 **Using `npm`** &nbsp; [<img align="center" src="" />]()
 
 ```sh
-❯ echo 'INSERT-TEST-COMMAND-HERE'
+❯ npm run test
 ```
 
 ---
 
 ## 📌 Project Roadmap
 
-- [X] **`Task 1`**: <strike>Implement feature one.</strike>
-- [ ] **`Task 2`**: Implement feature two.
-- [ ] **`Task 3`**: Implement feature three.
+- [X] **`Task 1`**: <strike>User Authentication</strike>
+- [ ] **`Task 2`**: Admin Profile Management.
+- [ ] **`Task 3`**: Candidate Profile Management.
+- [ ] **`Task 4`**: Employer Profile Management.
 
 ---
 
