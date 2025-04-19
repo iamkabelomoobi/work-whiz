@@ -1,3 +1,5 @@
+export {adminValidator} from './admin.validator'
+
 export { adminRegisterValidator } from './admin-register.validator';
 
 export { candidateRegisterValidator } from './candidate-register.validator';

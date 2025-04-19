@@ -21,14 +21,14 @@ class AuthenticationMiddleware {
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    const csrfValid = csrfUtil.validate(req);
-    if (!csrfValid) {
-      responseUtil.sendError(res, {
-        message: 'Invalid CSRF token',
-        statusCode: StatusCodes.FORBIDDEN,
-      });
-      return;
-    }
+    // const csrfValid = csrfUtil.validate(req);
+    // if (!csrfValid) {
+    //   responseUtil.sendError(res, {
+    //     message: 'Invalid CSRF token',
+    //     statusCode: StatusCodes.FORBIDDEN,
+    //   });
+    //   return;
+    // }
 
     const authorizationHeader = req.headers['x-authorization'] as string;
 
@@ -58,9 +58,11 @@ class AuthenticationMiddleware {
         role: 'admin',
       });
 
+      console.log(decoded);
       req.app.locals.userId = decoded.id;
       next();
     } catch (error) {
+      console.error(error);
       responseUtil.sendError(res, {
         message: 'Invalid or expired token',
         statusCode: StatusCodes.UNAUTHORIZED,
