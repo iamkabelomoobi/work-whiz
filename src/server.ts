@@ -206,13 +206,30 @@ export const startServer = async (
     // }
 
     if (enableHealthCheck) {
+      // app.get('/health', (req, res) => {
+      //   res.status(200).json({
+      //     status: 'UP',
+      //     timestamp: new Date().toISOString(),
+      //     uptime: process.uptime(),
+      //     database: sequelize.authenticate ? 'connected' : 'disconnected',
+      //   });
+      // });
+      // Health check route
       app.get('/health', (req, res) => {
-        res.status(200).json({
-          status: 'UP',
-          timestamp: new Date().toISOString(),
+        // Sample health data - replace with your actual health metrics
+        const healthData = {
+          status: 'OK',
+          services: [
+            { name: 'Database', status: 'OK', responseTime: '24ms' },
+            { name: 'API', status: 'OK', responseTime: '156ms' },
+            { name: 'Cache', status: 'WARNING', responseTime: '342ms' },
+          ],
           uptime: process.uptime(),
-          database: sequelize.authenticate ? 'connected' : 'disconnected',
-        });
+          timestamp: new Date().toISOString(),
+        };
+
+        // Render the health.ejs template with the healthData
+        res.render('health', healthData);
       });
     }
 

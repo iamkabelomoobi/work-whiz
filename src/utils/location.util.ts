@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from './logger';
 
 interface IpApiResponse {
   status: 'success' | 'fail';
@@ -52,6 +53,14 @@ export const getLocationFromIp = async (
       isp: response.data.isp,
     };
   } catch (error) {
-    throw new Error('Unable to fetch location data');
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        logger.error('Response data:', error.response.data);
+      }
+      if (error.request) {
+        logger.error('Request data:', error.request);
+      }
+      throw new Error('Unable to fetch location data');
+    }
   }
 };

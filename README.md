@@ -119,9 +119,9 @@ Run the test suite using the following command:
 ## 📌 Project Roadmap
 
 - [x] **`Task 1`**: <strike>User Authentication</strike>
-- [ ] **`Task 2`**: Admin Profile Management.
+- [x] **`Task 2`**: <strike>Admin Profile Management.</strike>
 - [ ] **`Task 3`**: Candidate Profile Management.
-- [ ] **`Task 4`**: Employer Profile Management.
+- [x] **`Task 4`**: <strike>Employer Profile Management.</strike>
 
 ---
 

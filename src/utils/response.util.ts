@@ -77,7 +77,7 @@ class ResponseUtil {
     ];
     for (const pattern of sensitivePatterns) {
       if (pattern.test(message)) {
-        return 'Sensitive information redacted';
+        return message;
       }
     }
     return message;

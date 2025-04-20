@@ -237,7 +237,7 @@ class EmployerRepository implements IEmployerRepository {
 
     try {
       const [affectedRows] = await this.employerModel.update(data, {
-        where: { id },
+        where: { userId: id },
         transaction: t,
         individualHooks: true,
       });

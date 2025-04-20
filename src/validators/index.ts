@@ -8,6 +8,8 @@ export { emailValidator } from './email.validator';
 
 export { employerRegisterValidator } from './employer-register.validator';
 
+export { employerValidator } from './employer.validator';
+
 export { validateInput } from './input.validator';
 
 export { passwordValidator } from './password.validator';

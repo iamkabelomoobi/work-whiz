@@ -1,5 +1,3 @@
-export { csrfUtil } from './csrfUtil';
-
 export { getUserRole } from './getUserRole.util';
 
 export { jwtUtil } from './jwt.util';

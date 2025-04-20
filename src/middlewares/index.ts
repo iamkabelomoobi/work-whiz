@@ -4,8 +4,6 @@ export { authenticationMiddleware } from './authentication.middleware';
 
 export { authorizationMiddleare } from './authorization.middleware';
 
-export { csrfCheckMiddleware } from './csrf.middleware';
-
 export {
   profileLimiter,
   registerLimiter,

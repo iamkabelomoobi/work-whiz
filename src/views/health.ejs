@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Health Check Status Dashboard</title>
+    <style>
+      :root {
+        --healthy: #22c55e;
+        --warning: #f59e0b;
+        --critical: #ef4444;
+        --text: #333;
+        --text-light: #6b7280;
+        --bg: #f8f9fa;
+        --card-bg: #ffffff;
+        --border: #e5e7eb;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 20px;
+        line-height: 1.5;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding: 20px;
+        background: var(--card-bg);
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        background-color: var(--healthy);
+        color: white;
+      }
+
+      .status-badge.critical {
+        background-color: var(--critical);
+      }
+
+      .status-badge.warning {
+        background-color: var(--warning);
+      }
+
+      h1 {
+        font-size: 24px;
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .last-checked {
+        color: var(--text-light);
+        font-size: 14px;
+        margin-bottom: 16px;
+        padding-left: 8px;
+      }
+
+      .check-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 20px;
+      }
+
+      .check-card {
+        background: var(--card-bg);
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+        transition: transform 0.2s ease;
+        border-top: 4px solid var(--healthy);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .check-card.warning {
+        border-top-color: var(--warning);
+      }
+
+      .check-card.critical {
+        border-top-color: var(--critical);
+      }
+
+      .check-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .check-status {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 12px;
+      }
+
+      .check-status.healthy {
+        background-color: var(--healthy);
+      }
+
+      .check-status.critical {
+        background-color: var(--critical);
+      }
+
+      .check-status.warning {
+        background-color: var(--warning);
+      }
+
+      .check-name {
+        font-weight: 600;
+        font-size: 16px;
+        margin: 0;
+      }
+
+      .check-type {
+        color: var(--text-light);
+        font-size: 13px;
+        margin: 4px 0 12px 24px;
+      }
+
+      /* Metrics Grid */
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 8px;
+      }
+
+      .metric-card {
+        background: var(--bg);
+        padding: 12px;
+        border-radius: 6px;
+        border-left: 3px solid var(--border);
+      }
+
+      .metric-card.warning {
+        border-left-color: var(--warning);
+      }
+
+      .metric-card.critical {
+        border-left-color: var(--critical);
+      }
+
+      .metric-label {
+        font-size: 12px;
+        color: var(--text-light);
+        margin-bottom: 4px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .metric-value {
+        font-weight: 600;
+        font-size: 18px;
+      }
+
+      .metric-value.healthy {
+        color: var(--healthy);
+      }
+
+      .metric-value.warning {
+        color: var(--warning);
+      }
+
+      .metric-value.critical {
+        color: var(--critical);
+      }
+
+      /* Response Time Chart */
+      .response-chart {
+        height: 60px;
+        margin: 16px 0;
+        background: var(--bg);
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .chart-line {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--border);
+      }
+
+      .chart-data {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: flex-end;
+        height: 100%;
+      }
+
+      .chart-bar {
+        flex: 1;
+        background: var(--healthy);
+        margin: 0 1px;
+        height: 0%;
+        transition: height 0.5s ease;
+        border-radius: 2px 2px 0 0;
+      }
+
+      .chart-bar.warning {
+        background: var(--warning);
+      }
+
+      .chart-bar.critical {
+        background: var(--critical);
+      }
+
+      /* Uptime History */
+      .uptime-history {
+        display: flex;
+        margin-top: 8px;
+        font-size: 12px;
+      }
+
+      .uptime-period {
+        flex: 1;
+        text-align: center;
+        color: var(--text-light);
+      }
+
+      .uptime-value {
+        font-weight: 500;
+      }
+
+      .uptime-value.healthy {
+        color: var(--healthy);
+      }
+
+      .uptime-value.warning {
+        color: var(--warning);
+      }
+
+      .uptime-value.critical {
+        color: var(--critical);
+      }
+
+      /* Status Details */
+      .status-details {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+        font-size: 13px;
+      }
+
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+      }
+
+      .detail-label {
+        color: var(--text-light);
+      }
+
+      .detail-value {
+        font-weight: 500;
+      }
+
+      @media (max-width: 768px) {
+        .check-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .metrics-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Health Check Status Dashboard</h1>
+        <div class="status-badge warning">Partial Outage</div>
+      </div>
+
+      <div class="last-checked">
+        Last checked: Just now • Updated every 60 seconds
+      </div>
+
+      <div class="check-grid">
+        <!-- API Service Card -->
+        <div class="check-card healthy">
+          <div class="card-header">
+            <div class="check-status healthy"></div>
+            <h3 class="check-name">API Service</h3>
+          </div>
+          <div class="check-type">HTTP GET /api/status</div>
+
+          <div class="response-chart">
+            <div class="chart-line"></div>
+            <div class="chart-data">
+              <div class="chart-bar" style="height: 45%"></div>
+              <div class="chart-bar" style="height: 60%"></div>
+              <div class="chart-bar" style="height: 52%"></div>
+              <div class="chart-bar" style="height: 38%"></div>
+              <div class="chart-bar" style="height: 65%"></div>
+              <div class="chart-bar" style="height: 42%"></div>
+              <div class="chart-bar" style="height: 55%"></div>
+              <div class="chart-bar" style="height: 48%"></div>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">
+                <span>Response Time</span>
+                <span>Avg: 156ms</span>
+              </div>
+              <div class="metric-value healthy">156ms</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">
+                <span>Uptime</span>
+                <span>Last 24h</span>
+              </div>
+              <div class="metric-value healthy">99.98%</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Requests</div>
+              <div class="metric-value">1,248/min</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Error Rate</div>
+              <div class="metric-value healthy">0.02%</div>
+            </div>
+          </div>
+
+          <div class="uptime-history">
+            <div class="uptime-period">
+              <div>24h</div>
+              <div class="uptime-value healthy">99.98%</div>
+            </div>
+            <div class="uptime-period">
+              <div>7d</div>
+              <div class="uptime-value healthy">99.96%</div>
+            </div>
+            <div class="uptime-period">
+              <div>30d</div>
+              <div class="uptime-value healthy">99.92%</div>
+            </div>
+          </div>
+
+          <div class="status-details">
+            <div class="detail-row">
+              <span class="detail-label">Last incident</span>
+              <span class="detail-value">12 days ago</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Current version</span>
+              <span class="detail-value">v2.4.1</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Database Card -->
+        <div class="check-card healthy">
+          <div class="card-header">
+            <div class="check-status healthy"></div>
+            <h3 class="check-name">Database</h3>
+          </div>
+          <div class="check-type">Primary Cluster</div>
+
+          <div class="response-chart">
+            <div class="chart-line"></div>
+            <div class="chart-data">
+              <div class="chart-bar" style="height: 20%"></div>
+              <div class="chart-bar" style="height: 18%"></div>
+              <div class="chart-bar" style="height: 22%"></div>
+              <div class="chart-bar" style="height: 25%"></div>
+              <div class="chart-bar" style="height: 19%"></div>
+              <div class="chart-bar" style="height: 24%"></div>
+              <div class="chart-bar" style="height: 21%"></div>
+              <div class="chart-bar" style="height: 23%"></div>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">
+                <span>Query Time</span>
+                <span>Avg: 24ms</span>
+              </div>
+              <div class="metric-value healthy">24ms</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">
+                <span>Uptime</span>
+                <span>Last 24h</span>
+              </div>
+              <div class="metric-value healthy">100%</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Connections</div>
+              <div class="metric-value">84/120</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Replication Lag</div>
+              <div class="metric-value healthy">0ms</div>
+            </div>
+          </div>
+
+          <div class="uptime-history">
+            <div class="uptime-period">
+              <div>24h</div>
+              <div class="uptime-value healthy">100%</div>
+            </div>
+            <div class="uptime-period">
+              <div>7d</div>
+              <div class="uptime-value healthy">100%</div>
+            </div>
+            <div class="uptime-period">
+              <div>30d</div>
+              <div class="uptime-value healthy">99.99%</div>
+            </div>
+          </div>
+
+          <div class="status-details">
+            <div class="detail-row">
+              <span class="detail-label">Last failover</span>
+              <span class="detail-value">Never</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Storage</span>
+              <span class="detail-value">64% used</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cache Server Card -->
+        <div class="check-card warning">
+          <div class="card-header">
+            <div class="check-status warning"></div>
+            <h3 class="check-name">Cache Server</h3>
+          </div>
+          <div class="check-type">Redis Cluster</div>
+
+          <div class="response-chart">
+            <div class="chart-line"></div>
+            <div class="chart-data">
+              <div class="chart-bar" style="height: 35%"></div>
+              <div class="chart-bar" style="height: 28%"></div>
+              <div class="chart-bar" style="height: 65%"></div>
+              <div class="chart-bar warning" style="height: 80%"></div>
+              <div class="chart-bar warning" style="height: 85%"></div>
+              <div class="chart-bar" style="height: 42%"></div>
+              <div class="chart-bar" style="height: 38%"></div>
+              <div class="chart-bar" style="height: 45%"></div>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card warning">
+              <div class="metric-label">
+                <span>Response Time</span>
+                <span>Avg: 342ms</span>
+              </div>
+              <div class="metric-value warning">342ms</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">
+                <span>Uptime</span>
+                <span>Last 24h</span>
+              </div>
+              <div class="metric-value warning">99.89%</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Hit Rate</div>
+              <div class="metric-value">92.4%</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Memory Usage</div>
+              <div class="metric-value warning">89%</div>
+            </div>
+          </div>
+
+          <div class="uptime-history">
+            <div class="uptime-period">
+              <div>24h</div>
+              <div class="uptime-value warning">99.89%</div>
+            </div>
+            <div class="uptime-period">
+              <div>7d</div>
+              <div class="uptime-value warning">99.76%</div>
+            </div>
+            <div class="uptime-period">
+              <div>30d</div>
+              <div class="uptime-value warning">99.54%</div>
+            </div>
+          </div>
+
+          <div class="status-details">
+            <div class="detail-row">
+              <span class="detail-label">Last incident</span>
+              <span class="detail-value">2 hours ago</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Nodes</span>
+              <span class="detail-value">3/3 operational</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Email Service Card -->
+        <div class="check-card critical">
+          <div class="card-header">
+            <div class="check-status critical"></div>
+            <h3 class="check-name">Email Service</h3>
+          </div>
+          <div class="check-type">SMTP Gateway</div>
+
+          <div class="response-chart">
+            <div class="chart-line"></div>
+            <div class="chart-data">
+              <div class="chart-bar" style="height: 40%"></div>
+              <div class="chart-bar" style="height: 35%"></div>
+              <div class="chart-bar" style="height: 0%"></div>
+              <div class="chart-bar" style="height: 0%"></div>
+              <div class="chart-bar" style="height: 0%"></div>
+              <div class="chart-bar" style="height: 0%"></div>
+              <div class="chart-bar critical" style="height: 15%"></div>
+              <div class="chart-bar critical" style="height: 20%"></div>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card critical">
+              <div class="metric-label">
+                <span>Response Time</span>
+                <span>Avg: Timeout</span>
+              </div>
+              <div class="metric-value critical">Timeout</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">
+                <span>Uptime</span>
+                <span>Last 24h</span>
+              </div>
+              <div class="metric-value critical">98.76%</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Queue Size</div>
+              <div class="metric-value critical">1,248</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Error Rate</div>
+              <div class="metric-value critical">100%</div>
+            </div>
+          </div>
+
+          <div class="uptime-history">
+            <div class="uptime-period">
+              <div>24h</div>
+              <div class="uptime-value critical">98.76%</div>
+            </div>
+            <div class="uptime-period">
+              <div>7d</div>
+              <div class="uptime-value warning">99.12%</div>
+            </div>
+            <div class="uptime-period">
+              <div>30d</div>
+              <div class="uptime-value warning">99.34%</div>
+            </div>
+          </div>
+
+          <div class="status-details">
+            <div class="detail-row">
+              <span class="detail-label">Last successful</span>
+              <span class="detail-value">47 min ago</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Incident</span>
+              <span class="detail-value">#INC-4821</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Gateway Card -->
+        <div class="check-card healthy">
+          <div class="card-header">
+            <div class="check-status healthy"></div>
+            <h3 class="check-name">Payment Gateway</h3>
+          </div>
+          <div class="check-type">HTTPS POST /process</div>
+
+          <div class="response-chart">
+            <div class="chart-line"></div>
+            <div class="chart-data">
+              <div class="chart-bar" style="height: 50%"></div>
+              <div class="chart-bar" style="height: 45%"></div>
+              <div class="chart-bar" style="height: 52%"></div>
+              <div class="chart-bar" style="height: 48%"></div>
+              <div class="chart-bar" style="height: 55%"></div>
+              <div class="chart-bar" style="height: 42%"></div>
+              <div class="chart-bar" style="height: 38%"></div>
+              <div class="chart-bar" style="height: 45%"></div>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">
+                <span>Response Time</span>
+                <span>Avg: 201ms</span>
+              </div>
+              <div class="metric-value healthy">201ms</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">
+                <span>Uptime</span>
+                <span>Last 24h</span>
+              </div>
+              <div class="metric-value healthy">99.95%</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Transactions</div>
+              <div class="metric-value">84/min</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Decline Rate</div>
+              <div class="metric-value healthy">1.2%</div>
+            </div>
+          </div>
+
+          <div class="uptime-history">
+            <div class="uptime-period">
+              <div>24h</div>
+              <div class="uptime-value healthy">99.95%</div>
+            </div>
+            <div class="uptime-period">
+              <div>7d</div>
+              <div class="uptime-value healthy">99.92%</div>
+            </div>
+            <div class="uptime-period">
+              <div>30d</div>
+              <div class="uptime-value healthy">99.89%</div>
+            </div>
+          </div>
+
+          <div class="status-details">
+            <div class="detail-row">
+              <span class="detail-label">Last outage</span>
+              <span class="detail-value">8 days ago</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Provider</span>
+              <span class="detail-value">Stripe v3</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- File Storage Card -->
+        <div class="check-card healthy">
+          <div class="card-header">
+            <div class="check-status healthy"></div>
+            <h3 class="check-name">File Storage</h3>
+          </div>
+          <div class="check-type">S3 Compatible</div>
+
+          <div class="response-chart">
+            <div class="chart-line"></div>
+            <div class="chart-data">
+              <div class="chart-bar" style="height: 35%"></div>
+              <div class="chart-bar" style="height: 42%"></div>
+              <div class="chart-bar" style="height: 38%"></div>
+              <div class="chart-bar" style="height: 45%"></div>
+              <div class="chart-bar" style="height: 32%"></div>
+              <div class="chart-bar" style="height: 28%"></div>
+              <div class="chart-bar" style="height: 35%"></div>
+              <div class="chart-bar" style="height: 40%"></div>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">
+                <span>Response Time</span>
+                <span>Avg: 187ms</span>
+              </div>
+              <div class="metric-value healthy">187ms</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">
+                <span>Uptime</span>
+                <span>Last 24h</span>
+              </div>
+              <div class="metric-value healthy">99.99%</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Requests</div>
+              <div class="metric-value">312/min</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-label">Storage Used</div>
+              <div class="metric-value">1.2TB/2TB</div>
+            </div>
+          </div>
+
+          <div class="uptime-history">
+            <div class="uptime-period">
+              <div>24h</div>
+              <div class="uptime-value healthy">99.99%</div>
+            </div>
+            <div class="uptime-period">
+              <div>7d</div>
+              <div class="uptime-value healthy">99.98%</div>
+            </div>
+            <div class="uptime-period">
+              <div>30d</div>
+              <div class="uptime-value healthy">99.97%</div>
+            </div>
+          </div>
+
+          <div class="status-details">
+            <div class="detail-row">
+              <span class="detail-label">Last backup</span>
+              <span class="detail-value">2 hours ago</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Region</span>
+              <span class="detail-value">us-east-1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Simple animation for chart bars
+      document.addEventListener('DOMContentLoaded', function () {
+        const bars = document.querySelectorAll('.chart-bar');
+        bars.forEach(bar => {
+          const targetHeight = bar.style.height;
+          bar.style.height = '0%';
+          setTimeout(() => {
+            bar.style.height = targetHeight;
+          }, 100);
+        });
+      });
+    </script>
+  </body>
+</html>
