@@ -50,12 +50,14 @@ class AuthenticationMiddleware {
       return;
     }
 
+
     const token = parts[1];
+    const decodedToken = jwtUtil.decode(token);
     try {
       const decoded = await jwtUtil.verify({
         token,
         type: 'access',
-        role: 'admin',
+        role: decodedToken.role,
       });
 
       req.app.locals.userId = decoded.id;
