@@ -26,6 +26,11 @@
             "glob": "**/*.ejs",
             "input": "src/templates",
             "output": "src/templates"
+          },
+          {
+            "glob": "**/*.ejs",
+            "input": "src/views",
+            "output": "src/views"
           }
         ],
         "generatePackageJson": true,
