@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { Request, Response } from 'express';
 import { authenticationService } from '@work-whiz/services';
-import { responseUtil, csrfUtil, getUserRole } from '@work-whiz/utils';
+import { responseUtil, getUserRole } from '@work-whiz/utils';
 import {
   IAdminRegister,
   ICandidateRegister,
@@ -14,9 +14,9 @@ import {
   candidateRegisterValidator,
   employerRegisterValidator,
 } from '@work-whiz/validators';
+import { Role } from '@work-whiz/types';
 
 const SESSION_EXPIRED_MESSAGE = 'Session has expired';
-const INVALID_CSRF_MESSAGE = 'Invalid CSRF token';
 
 /**
  * @swagger
@@ -114,14 +114,6 @@ export class AuthenticationController {
     path: '/',
   };
 
-  private readonly CSRF_TOKEN_COOKIE = {
-    httpOnly: false,
-    secure: true,
-    sameSite: 'strict' as const,
-    maxAge: 4 * 60 * 60 * 1000,
-    path: '/',
-  };
-
   private constructor() {
     //
   }
@@ -139,23 +131,15 @@ export class AuthenticationController {
   /**
    * Sets authentication cookies (refresh + CSRF token)
    */
-  private setAuthCookies(
-    res: Response,
-    refreshToken: string,
-    csrfToken: string,
-  ): void {
-    res
-      .cookie('refresh_token', refreshToken, this.REFRESH_TOKEN_COOKIE)
-      .cookie('x-csrf-token', csrfToken, this.CSRF_TOKEN_COOKIE);
+  private setAuthCookies(res: Response, refreshToken: string): void {
+    res.cookie('refresh_token', refreshToken, this.REFRESH_TOKEN_COOKIE);
   }
 
   /**
    * Clears authentication cookies
    */
   private clearAuthCookies(res: Response): void {
-    res
-      .clearCookie('refresh_token', { path: this.REFRESH_TOKEN_COOKIE.path })
-      .clearCookie('x-csrf-token', { path: this.CSRF_TOKEN_COOKIE.path });
+    res.clearCookie('refresh_token', { path: this.REFRESH_TOKEN_COOKIE.path });
   }
 
   /**
@@ -177,57 +161,6 @@ export class AuthenticationController {
     }
 
     return { refreshToken, userId };
-  }
-
-  /**
-   * Validates CSRF token from request
-   */
-  private validateCsrf(req: Request, res: Response): boolean {
-    if (!csrfUtil.validate(req)) {
-      responseUtil.sendError(res, {
-        message: INVALID_CSRF_MESSAGE,
-        statusCode: StatusCodes.FORBIDDEN,
-      });
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Validates email and password fields in the request
-   */
-  private validateEmailAndPassword(
-    email: string,
-    password: string,
-    res: Response,
-  ): boolean {
-    if (!email?.trim() || !password?.trim()) {
-      responseUtil.sendError(res, {
-        message: 'Email and password are required',
-        statusCode: StatusCodes.BAD_REQUEST,
-      });
-      return false;
-    }
-
-    const emailError = emailValidator(email);
-    if (emailError) {
-      responseUtil.sendError(res, {
-        message: emailError.details[0].message,
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-      });
-      return false;
-    }
-
-    const passwordError = passwordValidator(password);
-    if (passwordError) {
-      responseUtil.sendError(res, {
-        message: passwordError.details[0].message,
-        statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-      });
-      return false;
-    }
-
-    return true;
   }
 
   /**
@@ -261,7 +194,7 @@ export class AuthenticationController {
 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
-      const role = getUserRole(req);
+      const role = 'employer' as Role//getUserRole(req);
 
       const registerData = req.body as
         | IAdminRegister
@@ -271,16 +204,7 @@ export class AuthenticationController {
       let registerErrors = null;
 
       switch (role) {
-        case 'admin':
-          registerErrors = adminRegisterValidator(
-            registerData as IAdminRegister,
-          );
-          break;
-        case 'candidate':
-          registerErrors = candidateRegisterValidator(
-            registerData as ICandidateRegister,
-          );
-          break;
+        
         case 'employer':
           registerErrors = employerRegisterValidator(
             registerData as IEmployerRegister,
@@ -347,15 +271,10 @@ export class AuthenticationController {
         email,
         password,
       );
-      const csrfToken = csrfUtil.generate(req, res);
 
-      this.setAuthCookies(res, refreshToken, csrfToken);
+      this.setAuthCookies(res, refreshToken);
 
-      responseUtil.sendSuccess(
-        res,
-        { accessToken, csrfToken },
-        String(StatusCodes.OK),
-      );
+      responseUtil.sendSuccess(res, { accessToken }, String(StatusCodes.OK));
     } catch (error) {
       this.clearAuthCookies(res);
       responseUtil.sendError(res, {
@@ -462,8 +381,6 @@ export class AuthenticationController {
 
   public refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
-      if (!this.validateCsrf(req, res)) return;
-
       const tokens = this.validateRefreshRequest(req, res);
       if (!tokens) return;
 
@@ -472,14 +389,9 @@ export class AuthenticationController {
       const { accessToken, refreshToken: newRefreshToken } =
         await authenticationService.refreshToken(userId, refreshToken);
 
-      const newCsrfToken = csrfUtil.generate(req, res);
-      this.setAuthCookies(res, newRefreshToken, newCsrfToken);
+      this.setAuthCookies(res, newRefreshToken);
 
-      responseUtil.sendSuccess(
-        res,
-        { accessToken, csrfToken: newCsrfToken },
-        String(StatusCodes.OK),
-      );
+      responseUtil.sendSuccess(res, { accessToken }, String(StatusCodes.OK));
     } catch (error) {
       this.clearAuthCookies(res);
       responseUtil.sendError(res, {
