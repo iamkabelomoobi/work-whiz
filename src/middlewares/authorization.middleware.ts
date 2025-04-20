@@ -1,4 +1,4 @@
-import { jwtUtil, responseUtil } from '@work-whiz/utils';
+import { jwtUtil, logger, responseUtil } from '@work-whiz/utils';
 import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
@@ -70,6 +70,8 @@ class AuthorizationMiddleware {
       req.app.locals.userId = verifiedPasswordToken.id;
       next();
     } catch (error) {
+      logger.error('Error in authorizing password setup:', error);
+
       responseUtil.sendError(res, {
         message: 'Error in authorizing password setup',
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,

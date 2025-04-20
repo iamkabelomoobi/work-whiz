@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { employerValidator } from '@work-whiz/validators';
 
 describe('employerValidator', () => {

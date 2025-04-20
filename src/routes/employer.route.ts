@@ -95,11 +95,7 @@ export class EmployerRoutes {
          *       200:
          *         description: Paginated list of employers
          */
-        .get(
-          '/',
-          profileLimiter,
-          employerController.getEmployers,
-        )
+        .get('/', profileLimiter, employerController.getEmployers)
 
         /**
          * @swagger

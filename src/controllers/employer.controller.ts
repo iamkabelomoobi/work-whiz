@@ -17,7 +17,9 @@ interface AppError extends Error {
 class EmployerController {
   private static instance: EmployerController;
 
-  private constructor() {}
+  private constructor() {
+    //
+  }
 
   public static getInstance(): EmployerController {
     if (!EmployerController.instance) {
@@ -55,8 +57,10 @@ class EmployerController {
   }
 
   private handleError = (res: Response, error: unknown): void => {
-    const statusCode = (error as AppError).statusCode ?? StatusCodes.INTERNAL_SERVER_ERROR;
-    const message = error instanceof Error ? error.message : 'An unknown error occurred';
+    const statusCode =
+      (error as AppError).statusCode ?? StatusCodes.INTERNAL_SERVER_ERROR;
+    const message =
+      error instanceof Error ? error.message : 'An unknown error occurred';
 
     responseUtil.sendError(res, {
       message,
@@ -77,9 +81,14 @@ class EmployerController {
 
   public getEmployers = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { paginationOptions, employerQuery } = this.extractQueryParams(req.query);
+      const { paginationOptions, employerQuery } = this.extractQueryParams(
+        req.query,
+      );
 
-      const response = await employerService.findAll(employerQuery, paginationOptions);
+      const response = await employerService.findAll(
+        employerQuery,
+        paginationOptions,
+      );
 
       responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
     } catch (error) {
@@ -87,7 +96,10 @@ class EmployerController {
     }
   };
 
-  public updateEmployer = async (req: Request, res: Response): Promise<void> => {
+  public updateEmployer = async (
+    req: Request,
+    res: Response,
+  ): Promise<void> => {
     try {
       const userId = req.app.locals.userId;
       const data = req.body as Partial<IEmployer>;
