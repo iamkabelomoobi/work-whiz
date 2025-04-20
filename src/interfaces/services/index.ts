@@ -6,4 +6,6 @@ export {
   IEmployerRegister,
 } from './authentication';
 
+export { IEmployerService } from './employer';
+
 export { IUserService } from './user';
