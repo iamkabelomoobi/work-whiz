@@ -18,6 +18,7 @@ import {
   EmployerRoutes,
 } from '@work-whiz/routes';
 import { authenticationQueue } from '@work-whiz/queues';
+import { authenticationMiddleware } from './authentication.middleware';
 
 export const configureMiddlewares = (app: Application): void => {
   const serverAdapter = new ExpressAdapter();
@@ -29,8 +30,7 @@ export const configureMiddlewares = (app: Application): void => {
   });
 
   app.set('trust proxy', 1);
-  // app.set('trust proxy', true);
-  // Set EJS as the view engine
+  app.use(cookieParser());
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, '../../src/views'));
   app.use(
@@ -59,7 +59,7 @@ export const configureMiddlewares = (app: Application): void => {
           callback(new Error('Not allowed by CORS'));
         }
       },
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true,
       maxAge: 86400,
@@ -93,6 +93,8 @@ export const configureMiddlewares = (app: Application): void => {
 
   // Swagger UI Route
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+  app.use(authenticationMiddleware.isAuthenticated);
 
   // API Routes
   const API_VERSION = 'v1';

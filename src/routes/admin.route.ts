@@ -1,10 +1,7 @@
 import { Router } from 'express';
 import { adminController } from '@work-whiz/controllers/admin.controller';
 import { userController } from '@work-whiz/controllers/user.controller';
-import {
-  profileLimiter,
-  authenticationMiddleware,
-} from '@work-whiz/middlewares';
+import { profileLimiter, authorizationMiddleare } from '@work-whiz/middlewares';
 
 /**
  * @swagger
@@ -33,7 +30,7 @@ export class AdminRoutes {
     this.router.get(
       '/me',
       profileLimiter,
-      authenticationMiddleware.isAuthenticated,
+      authorizationMiddleare.isAuthorized,
       adminController.getAdmin,
     );
 
@@ -62,7 +59,7 @@ export class AdminRoutes {
     this.router.patch(
       '/me',
       profileLimiter,
-      authenticationMiddleware.isAuthenticated,
+      authorizationMiddleare.isAuthorized,
       adminController.updateAdmin,
     );
 
@@ -99,7 +96,7 @@ export class AdminRoutes {
     this.router.get(
       '/',
       profileLimiter,
-      authenticationMiddleware.isAuthenticated,
+      authorizationMiddleare.isAuthorized,
       adminController.getAllAdmins,
     );
 
@@ -136,7 +133,7 @@ export class AdminRoutes {
     this.router.patch(
       '/me/contact',
       profileLimiter,
-      authenticationMiddleware.isAuthenticated,
+      authorizationMiddleare.isAuthorized,
       userController.updateContact,
     );
 
