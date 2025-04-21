@@ -1,6 +1,6 @@
 export { IAdminRepository } from './admin.repository';
 
-export { ICandidateRepository } from './candidate.respositry';
+export { ICandidateRepository } from './candidate.repository';
 
 export { IEmployerRepository } from './employer.repository';
 
