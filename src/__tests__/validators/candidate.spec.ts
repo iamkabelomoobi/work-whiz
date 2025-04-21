@@ -2,6 +2,7 @@ import { candidateValidator } from '@work-whiz/validators';
 import { ICandidate } from '@work-whiz/interfaces';
 import { ValidationError } from 'joi';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TestCandidate = Partial<Record<keyof ICandidate, any>>;
 
 describe('candidateValidator', () => {

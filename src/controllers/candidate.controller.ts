@@ -13,11 +13,6 @@ import {
 /**
  * Controller for handling candidate-related HTTP requests
  * @class
- * @implements {SingletonPattern}
- * @swagger
- * tags:
- *   name: Candidate
- *   description: Endpoints for managing candidate profiles
  */
 class CandidateController {
   private static instance: CandidateController;
@@ -124,28 +119,6 @@ class CandidateController {
     return CandidateController.instance;
   }
 
-  /**
-   * Gets a single candidate by user ID
-   * @async
-   * @param {Request} req - Express request object
-   * @param {Response} res - Express response object
-   * @returns {Promise<void>}
-   * @swagger
-   * /api/candidates/{userId}:
-   *   get:
-   *     summary: Get a candidate by ID
-   *     parameters:
-   *       - in: path
-   *         name: userId
-   *         required: true
-   *         schema:
-   *           type: string
-   *     responses:
-   *       200:
-   *         description: Candidate found
-   *       404:
-   *         description: Candidate not found
-   */
   public getCandidate = async (req: Request, res: Response): Promise<void> => {
     try {
       const { userId } = req.params;
@@ -160,29 +133,6 @@ class CandidateController {
     }
   };
 
-  /**
-   * Gets multiple candidates with pagination
-   * @async
-   * @param {Request} req - Express request object
-   * @param {Response} res - Express response object
-   * @returns {Promise<void>}
-   * @swagger
-   * /api/candidates:
-   *   get:
-   *     summary: Get list of candidates
-   *     parameters:
-   *       - in: query
-   *         name: page
-   *         schema:
-   *           type: integer
-   *       - in: query
-   *         name: limit
-   *         schema:
-   *           type: integer
-   *     responses:
-   *       200:
-   *         description: List of candidates
-   */
   public getCandidates = async (req: Request, res: Response): Promise<void> => {
     try {
       const { paginationOptions, candidateQuery } = this.extractQueryParams(
@@ -200,36 +150,6 @@ class CandidateController {
     }
   };
 
-  /**
-   * Updates a candidate's information
-   * @async
-   * @param {Request} req - Express request object
-   * @param {Response} res - Express response object
-   * @returns {Promise<void>}
-   * @swagger
-   * /api/candidates/{userId}:
-   *   patch:
-   *     summary: Update a candidate
-   *     parameters:
-   *       - in: path
-   *         name: userId
-   *         required: true
-   *         schema:
-   *           type: string
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             $ref: '#/components/schemas/ICandidate'
-   *     responses:
-   *       200:
-   *         description: Candidate updated
-   *       400:
-   *         description: Invalid input data
-   *       404:
-   *         description: Candidate not found
-   */
   public updateCandidate = async (
     req: Request,
     res: Response,

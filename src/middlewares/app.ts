@@ -16,6 +16,7 @@ import { swaggerSpec } from '@work-whiz/configs/swagger';
 import {
   AdminRoutes,
   AuthenticationRoutes,
+  CandidateRoutes,
   EmployerRoutes,
 } from '@work-whiz/routes';
 import { authenticationQueue } from '@work-whiz/queues';
@@ -102,5 +103,6 @@ export const configureMiddlewares = (app: Application): void => {
   const API_VERSION = 'v1';
   app.use(`/api/${API_VERSION}/auth`, new AuthenticationRoutes().init());
   app.use(`/api/${API_VERSION}/admins`, new AdminRoutes().init());
+  app.use(`/api/${API_VERSION}/candidates`, new CandidateRoutes().init());
   app.use(`/api/${API_VERSION}/employers`, new EmployerRoutes().init());
 };

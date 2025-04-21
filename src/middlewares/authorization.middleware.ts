@@ -1,5 +1,5 @@
 import { jwtUtil, logger, responseUtil } from '@work-whiz/utils';
-import { Request, Response, NextFunction, response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
 class AuthorizationMiddleware {
@@ -44,7 +44,7 @@ class AuthorizationMiddleware {
       }
 
       const decoded = jwtUtil.decode(refreshToken);
-      if (!decoded) {
+      if (!decoded || typeof decoded !== 'object') {
         return responseUtil.sendError(res, {
           message: 'Invalid refresh token.',
           statusCode: StatusCodes.UNAUTHORIZED,
