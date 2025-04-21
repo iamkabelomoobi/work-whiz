@@ -46,7 +46,8 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "tslib": "^2.3.0",
-    "ua-parser-js": "^2.0.3"
+    "ua-parser-js": "^2.0.3",
+    "lusca": "^1.7.0"
   },
   "devDependencies": {
     "@nx/esbuild": "20.8.0",

@@ -1,5 +1,5 @@
 import { jwtUtil, logger, responseUtil } from '@work-whiz/utils';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
 class AuthorizationMiddleware {
@@ -15,6 +15,64 @@ class AuthorizationMiddleware {
     }
     return AuthorizationMiddleware.instance;
   }
+
+  /**
+   * Middleware to authorize a user based on the refresh token stored in an HTTP-only cookie.
+   *
+   * This checks for the 'refresh_token' cookie, decodes and verifies it.
+   * If valid, attaches the user ID to `req.app.locals.userId`.
+   *
+   * @param {Request} req - Express request object
+   * @param {Response} res - Express response object
+   * @param {NextFunction} next - Express next middleware function
+   *
+   * @returns {Promise<void>} - Calls next() if authorization is successful, otherwise sends 401 error.
+   */
+  public isAuthorized = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const refreshToken = req.cookies['refresh_token'];
+
+      if (!refreshToken) {
+        return responseUtil.sendError(res, {
+          message: 'Missing refresh token.',
+          statusCode: StatusCodes.UNAUTHORIZED,
+        });
+      }
+
+      const decoded = jwtUtil.decode(refreshToken);
+      if (!decoded) {
+        return responseUtil.sendError(res, {
+          message: 'Invalid refresh token.',
+          statusCode: StatusCodes.UNAUTHORIZED,
+        });
+      }
+
+      const verified = await jwtUtil.verify({
+        token: refreshToken,
+        type: decoded.type,
+        role: decoded.role,
+      });
+
+      if (!verified) {
+        return responseUtil.sendError(res, {
+          message: 'Invalid or expired refresh token.',
+          statusCode: StatusCodes.UNAUTHORIZED,
+        });
+      }
+
+      req.app.locals.userId = verified.id;
+      next();
+    } catch (error) {
+      responseUtil.sendError(res, {
+        message: 'Invalid or expired token.',
+        statusCode: StatusCodes.UNAUTHORIZED,
+      });
+    }
+  };
 
   /**
    * Middleware to authorize password setup

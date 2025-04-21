@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import fs from 'fs';
 import path from 'path';
 import cookieParser from 'cookie-parser';
+import lusca from 'lusca';
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
@@ -18,6 +19,7 @@ import {
   EmployerRoutes,
 } from '@work-whiz/routes';
 import { authenticationQueue } from '@work-whiz/queues';
+import { authenticationMiddleware } from './authentication.middleware';
 
 export const configureMiddlewares = (app: Application): void => {
   const serverAdapter = new ExpressAdapter();
@@ -29,8 +31,7 @@ export const configureMiddlewares = (app: Application): void => {
   });
 
   app.set('trust proxy', 1);
-  // app.set('trust proxy', true);
-  // Set EJS as the view engine
+  app.use(cookieParser());
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, '../../src/views'));
   app.use(
@@ -59,7 +60,7 @@ export const configureMiddlewares = (app: Application): void => {
           callback(new Error('Not allowed by CORS'));
         }
       },
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true,
       maxAge: 86400,
@@ -67,6 +68,7 @@ export const configureMiddlewares = (app: Application): void => {
   );
 
   app.use(cookieParser());
+  app.use(lusca.csrf());
 
   app.use(express.json({ limit: '10kb' }));
   app.use(express.urlencoded({ extended: true, limit: '10kb' }));
@@ -93,6 +95,8 @@ export const configureMiddlewares = (app: Application): void => {
 
   // Swagger UI Route
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+  app.use(authenticationMiddleware.isAuthenticated);
 
   // API Routes
   const API_VERSION = 'v1';
