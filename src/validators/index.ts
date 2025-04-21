@@ -2,6 +2,8 @@ export { adminValidator } from './admin.validator';
 
 export { adminRegisterValidator } from './admin-register.validator';
 
+export { candidateValidator } from './candidate.validator';
+
 export { candidateRegisterValidator } from './candidate-register.validator';
 
 export { emailValidator } from './email.validator';
