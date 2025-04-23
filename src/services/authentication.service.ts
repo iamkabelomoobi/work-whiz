@@ -226,6 +226,8 @@ class AuthenticationService {
       });
     }
 
+    console.log(user);
+
     const isPasswordValid = await passwordUtil.compareSync(
       user.role,
       password,
