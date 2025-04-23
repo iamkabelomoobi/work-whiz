@@ -8,12 +8,23 @@ import {
 } from '@work-whiz/interfaces';
 import { employerRepository } from '@work-whiz/repositories';
 import { StatusCodes } from 'http-status-codes';
+import { cacheUtil } from '@work-whiz/utils';
+import { BaseService } from './base.service';
 
-class EmployerService implements IEmployerService {
+class EmployerService extends BaseService implements IEmployerService {
   private static instance: EmployerService;
 
+  /**
+   * Generates a cache key for the employer based on userId
+   * @param {string} userId - The user ID of the employer
+   * @returns {string} The generated cache key
+   */
+  private generateCacheKey = (userId: string): string => {
+    return `employer:${userId}`;
+  };
+
   private constructor() {
-    // Private constructor to enforce singleton pattern
+    super();
   }
 
   /**
@@ -28,39 +39,6 @@ class EmployerService implements IEmployerService {
   }
 
   /**
-   * Handles method-level error capturing and standardizes service error formatting.
-   * @template T
-   * @param {() => Promise<T>} fn - The asynchronous function to execute
-   * @param {string} method - Name of the calling method for trace context
-   * @returns {Promise<T>} The resolved value from the passed function
-   * @throws {ServiceError} Standardized error object
-   */
-  private async handleErrors<T>(
-    fn: () => Promise<T>,
-    method: string,
-  ): Promise<T> {
-    try {
-      return await fn();
-    } catch (error: any) {
-      if (error instanceof ServiceError) throw error;
-
-      // Optional: console.error in development
-      // console.error(`[${method}] Unexpected Error:`, error);
-
-      throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
-        message: 'An unexpected error occurred.',
-        trace: {
-          method,
-          context: {
-            error: error?.message || error,
-            stack: error?.stack,
-          },
-        },
-      });
-    }
-  }
-
-  /**
    * Retrieves a single employer based on the provided query.
    * @param {IEmployerQuery} query - Employer identification criteria
    * @returns {Promise<IEmployer>} The matched employer object
@@ -68,6 +46,13 @@ class EmployerService implements IEmployerService {
    */
   public async findOne(query: IEmployerQuery): Promise<IEmployer> {
     return this.handleErrors(async () => {
+      const cacheKey = this.generateCacheKey(query.userId);
+      const cachedEmployer = await cacheUtil.get(cacheKey);
+
+      if (cachedEmployer) {
+        return cachedEmployer as IEmployer;
+      }
+
       const employer = await employerRepository.read(query);
 
       if (!employer) {
@@ -77,6 +62,7 @@ class EmployerService implements IEmployerService {
         });
       }
 
+      await cacheUtil.set(cacheKey, employer, 3600);
       return employer;
     }, this.findOne.name);
   }
@@ -141,6 +127,9 @@ class EmployerService implements IEmployerService {
       }
 
       await employerRepository.update(userId, data);
+
+      const cacheKey = this.generateCacheKey(employer.userId);
+      await cacheUtil.delete(cacheKey);
 
       return { message: 'Employer account updated successfully.' };
     }, this.update.name);

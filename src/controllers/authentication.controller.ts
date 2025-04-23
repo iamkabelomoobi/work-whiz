@@ -14,8 +14,6 @@ import {
   candidateRegisterValidator,
   employerRegisterValidator,
 } from '@work-whiz/validators';
-import { Role } from '@work-whiz/types';
-import { ROLE_ENUM } from '@work-whiz/enums';
 
 const SESSION_EXPIRED_MESSAGE = 'Session has expired';
 
