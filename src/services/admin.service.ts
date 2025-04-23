@@ -121,7 +121,17 @@ class AdminService extends BaseService implements IAdminService {
         });
       }
 
-      await adminRepository.update(admin.id, data);
+      const updateResult = await adminRepository.update(admin.id, data);
+
+      if (!updateResult) {
+        throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
+          message: 'Failed to update the admin account.',
+          trace: {
+            method: this.update.name,
+            context: { userId: id, data },
+          },
+        });
+      }
 
       const cacheKey = this.generateCacheKey(admin.userId);
       await cacheUtil.delete(cacheKey);

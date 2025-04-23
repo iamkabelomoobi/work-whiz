@@ -595,7 +595,6 @@ class AuthenticationService extends BaseService {
       const cacheKey = `password_reset:${user.id}`;
       await cacheUtil.delete(cacheKey);
 
-      const deviceLocation = await getLocationFromIp(device.ip);
 
       await authenticationQueue.add({
         email: user.email,
@@ -608,7 +607,7 @@ class AuthenticationService extends BaseService {
             device: {
               browser: device.browser,
               os: device.os,
-              location: deviceLocation,
+              location: getLocationFromIp('24.48.0.1'),
               timestamp: new Date().toISOString(),
               ip: device.ip,
             },
