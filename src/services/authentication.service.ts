@@ -241,10 +241,9 @@ class AuthenticationService extends BaseService {
         jwtUtil.generate({ id: user.id, role: user.role, type: 'refresh' }),
       ]);
 
-      await redis.set(
+      await cacheUtil.set(
         `refresh_token:${user.id}`,
         refreshToken,
-        'EX',
         REFRESH_TOKEN_TTL_SECONDS,
       );
 
