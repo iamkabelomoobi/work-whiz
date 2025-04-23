@@ -35,7 +35,6 @@ class AuthorizationMiddleware {
   ): Promise<void> => {
     try {
       const refreshToken = req.cookies['refresh_token'];
-
       if (!refreshToken) {
         return responseUtil.sendError(res, {
           message: 'Missing refresh token.',
