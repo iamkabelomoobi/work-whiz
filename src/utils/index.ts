@@ -1,3 +1,5 @@
+export { cacheUtil } from './cache.utils';
+
 export { getUserRole } from './getUserRole.util';
 
 export { jwtUtil } from './jwt.util';
