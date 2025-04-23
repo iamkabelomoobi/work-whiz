@@ -1,4 +1,3 @@
-import { Transaction } from 'sequelize';
 import {
   ICandidate,
   ICandidateQuery,
@@ -27,7 +26,13 @@ export interface ICandidateRepository {
   readAll(
     query: ICandidateQuery,
     options: IPaginationQueryOptions,
-  ): Promise<{ admins: ICandidate[]; total: number }>;
+  ): Promise<{
+    candidates: ICandidate[];
+    total: number;
+    totalPages: number;
+    currentPage: number;
+    perPage: number;
+  }>;
 
   /**
    * Updates a candidate’s data with the specified fields.
@@ -37,12 +42,4 @@ export interface ICandidateRepository {
    * @returns A Promise that resolves to the updated candidate or null if not found.
    */
   update(userId: string, data: Partial<ICandidate>): Promise<ICandidate | null>;
-
-  /**
-   * Attaches a Sequelize transaction to the repository instance for scoped DB operations.
-   *
-   * @param t - The Sequelize transaction to bind.
-   * @returns A new instance of the repository scoped with the given transaction.
-   */
-  withTransaction(t: Transaction): ICandidateRepository;
 }
