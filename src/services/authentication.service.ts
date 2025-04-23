@@ -1,5 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
-import { getLocationFromIp, jwtUtil, passwordUtil } from '@work-whiz/utils';
+import { BaseService } from './base.service';
+import {
+  getLocationFromIp,
+  jwtUtil,
+  passwordUtil,
+  cacheUtil,
+} from '@work-whiz/utils';
 import { redis } from '@work-whiz/libs';
 import {
   adminRepository,
@@ -13,7 +19,6 @@ import {
   IAdmin,
   ICandidate,
   IEmployer,
-  IUser,
   IAdminRegister,
   ICandidateRegister,
   IEmployerRegister,
@@ -36,7 +41,7 @@ const AuthenticationErrorMessages = {
   confirmActivation: 'Your account activation request has been processed.',
 };
 
-class AuthenticationService {
+class AuthenticationService extends BaseService {
   private static instance: AuthenticationService;
 
   private createRoleSpecificUser = async (
@@ -89,7 +94,7 @@ class AuthenticationService {
   };
 
   private constructor() {
-    //
+    super();
   }
 
   public static getInstance() {
@@ -99,36 +104,38 @@ class AuthenticationService {
     return AuthenticationService.instance;
   }
 
+  /**
+   * Registers a new user with a specific role.
+   * Prevents duplicate users, stores a temporary password setup token,
+   * and queues an email for account completion.
+   *
+   * @param role - Role of the user (Admin, Candidate, or Employer)
+   * @param data - Registration form data
+   * @returns A success message
+   */
   public register = async (
     role: Role,
     data: IAdminRegister | ICandidateRegister | IEmployerRegister,
-  ): Promise<{ message: string }> => {
-    const errorMessage = AuthenticationErrorMessages.register;
+  ): Promise<{ message: string }> =>
+    this.handleErrors(async () => {
+      const { email, phone } = data;
+      const errorMessage = AuthenticationErrorMessages.register;
 
-    try {
-      const userExist = await userRepository.read({
-        email: data.email,
-      });
-      if (userExist) {
+      const existingUser = await userRepository.read({ email });
+
+      if (existingUser) {
         throw new ServiceError(StatusCodes.BAD_REQUEST, {
           message: errorMessage,
           trace: {
             method: this.register.name,
-            context: {
-              email: data.email,
-              error: 'User already exists',
-            },
+            context: { email },
           },
         });
       }
 
-      const newUser = await userRepository.create({
-        email: data.email,
-        phone: data.phone,
-        role: role,
-      });
+      const newUser = await userRepository.create({ email, phone, role });
 
-      await this.createRoleSpecificUser(newUser.role, {
+      await this.createRoleSpecificUser(role, {
         ...data,
         userId: newUser.id,
       });
@@ -139,22 +146,30 @@ class AuthenticationService {
         type: 'password_setup',
       });
 
-      const cacheKey = `password_setup:${newUser.id}`;
-      await redis.setex(cacheKey, 1800, passwordSetupToken); // 30 minutes expiration
+      const PASSWORD_SETUP_EXPIRATION = 1800;
+      const PASSWORD_SETUP_EXPIRATION_TEXT = '30 minutes';
 
-      const frontEndUrl = this.createFrontendUrl(newUser.role);
-      const setupUrl = new URL(`${frontEndUrl}/auth/password/setup`);
+      const cacheKey = `password_setup:${newUser.id}`;
+      await cacheUtil.set(
+        cacheKey,
+        passwordSetupToken,
+        PASSWORD_SETUP_EXPIRATION,
+      );
+
+      const setupUrl = new URL(
+        `${this.createFrontendUrl(role)}/auth/password/setup`,
+      );
       setupUrl.searchParams.set('token', passwordSetupToken);
 
       await authenticationQueue.add({
-        email: newUser.email,
+        email,
         subject: 'Complete Your Account Setup',
         template: {
           name: 'password_setup',
           content: {
-            email: newUser.email,
+            email,
             uri: setupUrl.toString(),
-            expiration: '30 minutes',
+            expiration: PASSWORD_SETUP_EXPIRATION_TEXT,
             appName: process.env.APP_NAME,
           },
         },
@@ -164,148 +179,95 @@ class AuthenticationService {
         message:
           'Account created successfully. Please check your email to set your password.',
       };
-    } catch (error) {
-      throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
-        message: errorMessage,
-        trace: {
-          method: this.register.name,
-          context: {
-            error: error instanceof Error ? error.message : 'Unknown error',
-            stack:
-              error instanceof Error && process.env.NODE_ENV === 'development'
-                ? error.stack
-                : undefined,
-            role,
-            email: data?.email || 'not provided',
-          },
-        },
-      });
-    }
-  };
+    }, this.register.name);
 
   /**
-   * Authenticates a user and generates JWT tokens upon successful login.
+   * Authenticates a user based on email and password.
    *
-   * @param {string} email - User's email address
-   * @param {string} password - User's plain text password
-   * @returns {Promise<{accessToken: string, refreshToken: string}>} Object containing JWT tokens
-   * @throws {ServiceError} Will throw specific errors for various failure cases:
-   *                        - 404 if user not found
-   *                        - 403 if account is locked
-   *                        - 401 if password is invalid
-   *                        - 500 for internal server errors
+   * @param {string} email - The email address of the user trying to log in.
+   * @param {string} password - The password provided by the user.
+   * @returns {Promise<{ accessToken: string; refreshToken: string }>} - A promise that resolves with the access and refresh tokens.
    */
   public login = async (
     email: string,
     password: string,
-  ): Promise<{ accessToken: string; refreshToken: string }> => {
-    const user = await userRepository.read({ email });
-    if (!user) {
-      throw new ServiceError(StatusCodes.UNAUTHORIZED, {
-        message: 'Invalid username or password.',
-        trace: {
-          method: this.login.name,
-          context: {
-            email,
-            error: 'User document not found',
-          },
-        },
-      });
-    }
+  ): Promise<{ accessToken: string; refreshToken: string }> =>
+    this.handleErrors(async () => {
+      const INVALID_CREDENTIALS_MSG = 'Invalid username or password.';
+      const REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
-    if (user.isLocked) {
-      throw new ServiceError(StatusCodes.FORBIDDEN, {
-        message: 'Account locked. Contact support at support@example.com.',
-        trace: {
-          method: this.login.name,
-          context: {
-            email,
-            error: 'User account is locked',
-          },
-        },
-      });
-    }
+      const user = await userRepository.read({ email });
 
-    const isPasswordValid = await passwordUtil.compareSync(
-      user.role,
-      password,
-      user.password,
-    );
-    if (!isPasswordValid) {
-      // TODO: implementing failed attempt tracking here
-      throw new ServiceError(StatusCodes.UNAUTHORIZED, {
-        message: 'Invalid username or password.',
-        trace: {
-          method: this.login.name,
-          context: {
-            email,
-            error: 'Password validation failed',
+      if (!user) {
+        throw new ServiceError(StatusCodes.UNAUTHORIZED, {
+          message: INVALID_CREDENTIALS_MSG,
+          trace: {
+            method: this.login.name,
+            context: { email, error: 'User not found' },
           },
-        },
-      });
-    }
+        });
+      }
 
-    try {
+      if (user.isLocked) {
+        throw new ServiceError(StatusCodes.FORBIDDEN, {
+          message: 'Account locked. Contact support at support@example.com.',
+          trace: {
+            method: this.login.name,
+            context: { email, error: 'User account is locked' },
+          },
+        });
+      }
+
+      const isPasswordValid = await passwordUtil.compareSync(
+        user.role,
+        password,
+        user.password,
+      );
+
+      if (!isPasswordValid) {
+        // TODO: track failed attempts
+        throw new ServiceError(StatusCodes.UNAUTHORIZED, {
+          message: INVALID_CREDENTIALS_MSG,
+          trace: {
+            method: this.login.name,
+            context: { email, error: 'Invalid password' },
+          },
+        });
+      }
       await userRepository.update(user.id, { isActive: true });
 
       const [accessToken, refreshToken] = await Promise.all([
-        jwtUtil.generate({
-          id: user.id,
-          role: user.role,
-          type: 'access',
-        }),
-        jwtUtil.generate({
-          id: user.id,
-          role: user.role,
-          type: 'refresh',
-        }),
+        jwtUtil.generate({ id: user.id, role: user.role, type: 'access' }),
+        jwtUtil.generate({ id: user.id, role: user.role, type: 'refresh' }),
       ]);
 
       await redis.set(
         `refresh_token:${user.id}`,
         refreshToken,
         'EX',
-        60 * 60 * 24 * 7,
-      ); // 7 days expiry
+        REFRESH_TOKEN_TTL_SECONDS,
+      );
 
       return { accessToken, refreshToken };
-    } catch (error) {
-      throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
-        message: AuthenticationErrorMessages.register,
-        trace: {
-          method: this.login.name,
-          context: {
-            email,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            stack:
-              error instanceof Error && process.env.NODE_ENV === 'development'
-                ? error.stack
-                : undefined,
-          },
-        },
-      });
-    }
-  };
+    }, this.login.name);
 
   /**
-   * Logs out a user by invalidating their active session and tokens.
+   * Logs out the user by setting their account as inactive and deleting associated tokens from the cache.
    *
-   * @param {string} userId - The ID of the user to logout
-   * @returns {Promise<{message: string}>} Success message
-   * @throws {ServiceError} Will throw errors for various cases:
-   *                        - 404 if user not found
-   *                        - 500 for internal server errors
+   * @param {string} userId - The user ID of the user logging out.
+   * @returns {Promise<{ message: string }>} - A message indicating the result of the logout operation.
+   *
+   * @throws {ServiceError} - Throws an error if the user could not be updated or cache deletion fails.
+   *
+   * @example
+   * const result = await authService.logout('user-id');
    */
-  public logout = async (userId: string): Promise<{ message: string }> => {
-    const errorMessage = AuthenticationErrorMessages.logout;
-    try {
-      const updatedUser = await userRepository.update(userId, {
-        isActive: false,
-      });
-
-      if (!updatedUser) {
-        throw new ServiceError(StatusCodes.NOT_FOUND, {
-          message: 'User not found',
+  public logout = async (userId: string): Promise<{ message: string }> =>
+    this.handleErrors(async () => {
+      const user = await userRepository.read({ id: userId });
+      if (!user) {
+        throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
+          message: 'An error occurred while logging out. Please try again.',
           trace: {
             method: this.logout.name,
             context: { userId },
@@ -313,56 +275,56 @@ class AuthenticationService {
         });
       }
 
-      // Invalidate all refresh tokens
+      const updatedUser = await userRepository.update(userId, {
+        isActive: false,
+      });
+
+      if (!updatedUser) {
+        throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
+          message: 'An error occurred while logging out. Please try again.',
+          trace: {
+            method: this.logout.name,
+            context: { userId },
+          },
+        });
+      }
+
       const refreshTokenKey = `refresh_token:${userId}`;
-      await redis.del(refreshTokenKey);
+      const userKey = `${updatedUser.role}:${userId}`;
+
+      await Promise.all([
+        cacheUtil.delete(userKey),
+        cacheUtil.delete(refreshTokenKey),
+      ]);
 
       return {
         message:
           'Logged out successfully. All active sessions have been terminated.',
       };
-    } catch (error) {
-      throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
-        message: errorMessage,
-        trace: {
-          method: this.logout.name,
-          context: {
-            userId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            stack:
-              error instanceof Error && process.env.NODE_ENV === 'development'
-                ? error.stack
-                : undefined,
-          },
-        },
-      });
-    }
-  };
+    }, this.logout.name);
 
   /**
-   * Completes the password setup process for a user after initial registration or password reset.
+   * Sets up the password for the user and updates the user's verification status.
    *
-   * @param {string} userId - The ID of the user setting the password
-   * @param {string} password - The new password to set
-   * @returns {Promise<{message: string}>} Success message
-   * @throws {ServiceError} Will throw errors for various cases:
-   *                        - 404 if user not found
-   *                        - 400 if password is compromised
-   *                        - 401 if token is invalid/expired
-   *                        - 422 if password doesn't meet requirements
-   *                        - 500 for internal server errors
+   * @param {string} userId - The ID of the user whose password is being set up.
+   * @param {string} password - The password to be set for the user.
+   * @returns {Promise<{ message: string }>} - A message indicating the result of the password setup operation.
+   *
+   * @throws {ServiceError} - Throws an error if the user account is not found or the update fails.
+   *
+   * @example
+   * const result = await authService.setupPassword('user-id', 'newPassword');
    */
   public setupPassword = async (
     userId: string,
     password: string,
-  ): Promise<{ message: string }> => {
-    const errorMessage = AuthenticationErrorMessages.setupPassword;
-
-    try {
+  ): Promise<{ message: string }> =>
+    this.handleErrors(async () => {
       const user = await userRepository.read({ id: userId });
       if (!user) {
-        throw new ServiceError(StatusCodes.NOT_FOUND, {
-          message: 'User account not found',
+        throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
+          message:
+            'An error occurred while setting password. Please try again.',
           trace: {
             method: this.setupPassword.name,
             context: {
@@ -373,40 +335,26 @@ class AuthenticationService {
         });
       }
 
-      // const isPasswordLeaked = await passwordUtil.checkLeakedPassword(
-      //   user.role,
-      //   password
-      // );
-      // if (isPasswordLeaked) {
-      //   throw new ServiceError(StatusCodes.BAD_REQUEST, {
-      //     message:
-      //       'This password has appeared in data breaches. Please choose a more secure password.',
-      //     trace: {
-      //       method: this.setupPassword.name,
-      //       context: {
-      //         userId,
-      //         error: 'Compromised password detected',
-      //       },
-      //     },
-      //   });
-      // }
-
       const hashedPassword = await passwordUtil.hashSync(user.role, password);
-      await userRepository.update(user.id, {
+
+      const updatedUser = await userRepository.update(user.id, {
         password: hashedPassword,
         isVerified: true,
-        isActive: true,
       });
+
+      if (!updatedUser) {
+        throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
+          message:
+            'An error occurred while setting up your password. Please try again.',
+          trace: {
+            method: this.setupPassword.name,
+            context: { userId },
+          },
+        });
+      }
 
       const cacheKey = `password_setup:${user.id}`;
-      await redis.del(cacheKey);
-
-      await authenticationQueue.add({
-        type: 'password_changed',
-        userId: user.id,
-        email: user.email,
-        timestamp: new Date().toISOString(),
-      });
+      await cacheUtil.delete(cacheKey);
 
       await authenticationQueue.add({
         email: user.email,
@@ -422,45 +370,28 @@ class AuthenticationService {
 
       return {
         message:
-          'Password successfully set up. You can now log in to your account.',
+          'Your password was successfully set up. You can now log in to your account using your new credentials.',
       };
-    } catch (error) {
-      throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
-        message: errorMessage,
-        trace: {
-          method: this.setupPassword.name,
-          context: {
-            userId,
-            error: 'Failed to set user password.',
-            stack: error,
-          },
-        },
-      });
-    }
-  };
+    }, this.setupPassword.name);
 
   /**
-   * Refreshes authentication tokens using a valid refresh token.
-   * Implements refresh token rotation for better security by issuing new refresh tokens
-   * and invalidating the previous one on each refresh operation.
+   * Refreshes the user's access and refresh tokens.
    *
-   * @param {string} userId - ID of the user requesting token refresh
-   * @param {string} refreshToken - Valid refresh token to exchange for new tokens
-   * @returns {Promise<{accessToken: string, refreshToken?: string}>} Object containing new access token and optional new refresh token
-   * @throws {ServiceError} Throws errors for various cases:
-   *                        - 400 if invalid input parameters
-   *                        - 404 if user not found
-   *                        - 401 if refresh token is invalid/expired
-   *                        - 403 if account is inactive or token revoked
-   *                        - 500 for internal server errors
+   * @param {string} userId - The ID of the user whose tokens are being refreshed.
+   * @param {string} refreshToken - The refresh token provided by the user.
+   * @returns {Promise<{ accessToken: string; refreshToken: string }>} - The new access and refresh tokens.
+   *
+   * @throws {ServiceError} - Throws an error if the user account is not found, inactive, or the refresh token is invalid.
+   *
+   * @example
+   * const result = await authService.refreshToken('user-id', 'existing-refresh-token');
    */
   public refreshToken = async (
     userId: string,
     refreshToken: string,
-  ): Promise<{ accessToken: string; refreshToken?: string }> => {
-    let user: IUser;
-    try {
-      user = await userRepository.read({ id: userId });
+  ): Promise<{ accessToken: string; refreshToken: string }> =>
+    this.handleErrors(async () => {
+      const user = await userRepository.read({ id: userId });
       if (!user) {
         throw new ServiceError(StatusCodes.NOT_FOUND, {
           message: 'User account not found. Please log in again.',
@@ -474,24 +405,11 @@ class AuthenticationService {
         });
       }
 
-      if (!user.isActive) {
-        throw new ServiceError(StatusCodes.FORBIDDEN, {
-          message: 'Account is inactive. Please contact support.',
-          trace: {
-            method: this.refreshToken.name,
-            context: {
-              userId,
-              error: 'User account is inactive',
-            },
-          },
-        });
-      }
+      const refreshTokenKey = `refresh_token:${userId}`;
+      const cachedRefreshToken = await cacheUtil.get(refreshTokenKey);
 
-      const storedTokenKey = `refresh_token:${userId}`;
-      const storedToken = await redis.get(storedTokenKey);
-
-      if (storedToken !== refreshToken) {
-        await redis.del(storedTokenKey);
+      if (cachedRefreshToken !== refreshToken) {
+        await cacheUtil.delete(refreshTokenKey);
         throw new ServiceError(StatusCodes.UNAUTHORIZED, {
           message: 'Invalid session detected. Please log in again.',
           trace: {
@@ -523,91 +441,30 @@ class AuthenticationService {
         }),
       ]);
 
-      // 5. Update stored refresh token with new one and set expiration
-      await redis.setex(storedTokenKey, 60 * 60 * 24 * 7, newRefreshToken);
-
-      await authenticationQueue.add({
-        type: 'token_refresh',
-        userId: user.id,
-        timestamp: new Date().toISOString(),
-      });
+      await cacheUtil.set(refreshTokenKey, newRefreshToken, 60 * 60 * 24 * 7);
 
       return {
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
       };
-    } catch (error) {
-      if (error.name === 'TokenExpiredError') {
-        if (user) {
-          await redis.del(`refresh_token:${user.id}`);
-        }
-        throw new ServiceError(StatusCodes.UNAUTHORIZED, {
-          message: 'Session expired. Please log in again.',
-          trace: {
-            method: this.refreshToken.name,
-            context: {
-              userId,
-              error: 'Refresh token expired',
-            },
-          },
-        });
-      }
-
-      if (error.name === 'JsonWebTokenError') {
-        throw new ServiceError(StatusCodes.UNAUTHORIZED, {
-          message: 'Invalid session. Please log in again.',
-          trace: {
-            method: this.refreshToken.name,
-            context: {
-              userId,
-              error: 'Invalid refresh token',
-            },
-          },
-        });
-      }
-
-      throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
-        message: 'Could not refresh session. Please try again.',
-        trace: {
-          method: this.refreshToken.name,
-          context: {
-            userId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            stack:
-              error instanceof Error && process.env.NODE_ENV === 'development'
-                ? error.stack
-                : undefined,
-          },
-        },
-      });
-    }
-  };
+    }, this.refreshToken.name);
 
   /**
-   * Initiates a password reset process by generating a secure token and sending a reset email.
-   * Includes rate limiting, security checks, and comprehensive audit logging.
+   * Handles password reset request.
    *
-   * @param {string} email - Email address of the account requesting password reset
-   * @returns {Promise<{message: string}>} Success message
-   * @throws {ServiceError} Throws errors for various cases:
-   *                        - 400 if email is invalid or rate limited
-   *                        - 404 if user not found
-   *                        - 403 if account is locked or unverified
-   *                        - 429 if too many requests
-   *                        - 500 for internal server errors
+   * @param email - The user's email address.
+   * @returns A success message whether the email exists or not.
+   *
+   * @throws {ServiceError} - If the account is unverified or locked.
    */
-  public forgotPassword = async (
-    email: string,
-  ): Promise<{ message: string }> => {
-    const errorMessage = AuthenticationErrorMessages.forgotPassword;
+  public forgotPassword = async (email: string): Promise<{ message: string }> =>
+    this.handleErrors(async () => {
+      const genericSuccessMessage =
+        'If an account exists with this email, a password reset link has been sent.';
 
-    try {
       const user = await userRepository.read({ email });
       if (!user) {
-        return {
-          message:
-            'If an account exists with this email, a password reset link has been sent.',
-        };
+        return { message: genericSuccessMessage };
       }
 
       if (!user.isVerified) {
@@ -645,7 +502,7 @@ class AuthenticationService {
       });
 
       const cacheKey = `password_reset:${user.id}`;
-      await redis.setex(cacheKey, 30 * 60, passwordResetToken);
+      await cacheUtil.set(cacheKey, passwordResetToken, 30 * 60);
 
       const frontEndUrl = this.createFrontendUrl(user.role);
       const resetUrl = new URL(`${frontEndUrl}/auth/password/reset`);
@@ -665,54 +522,27 @@ class AuthenticationService {
         },
       });
 
-      return {
-        message:
-          'If an account exists with this email, a password reset link has been sent.',
-      };
-    } catch (error) {
-      throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
-        message: errorMessage,
-        trace: {
-          method: this.forgotPassword.name,
-          context: {
-            email,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            stack:
-              error instanceof Error && process.env.NODE_ENV === 'development'
-                ? error.stack
-                : undefined,
-          },
-        },
-      });
-    }
-  };
+      return { message: genericSuccessMessage };
+    }, this.forgotPassword.name);
 
   /**
    * Completes the password reset process by validating the reset token and updating the user's password.
-   * Includes security checks, password validation, and comprehensive audit logging.
    *
    * @param {string} userId - ID of the user resetting their password
    * @param {string} password - New password to set
    * @param {Object} device - Device information where reset was initiated
    * @param {string} device.browser - User's browser/agent
+   * @param {string} device.os - Operating system
    * @param {string} device.ip - IP address where request originated
    * @param {string} device.timestamp - Time of the request
    * @returns {Promise<{message: string}>} Success message
-   * @throws {ServiceError} Throws errors for various cases:
-   *                        - 400 if invalid input or password requirements not met
-   *                        - 401 if invalid/expired reset token
-   *                        - 403 if account is locked
-   *                        - 404 if user not found
-   *                        - 500 for internal server errors
    */
   public resetPassword = async (
     userId: string,
     password: string,
     device: { browser: string; os: string; ip: string; timestamp: string },
-  ): Promise<{ message: string }> => {
-    const errorMessage = AuthenticationErrorMessages.resetPassword;
-
-    try {
+  ): Promise<{ message: string }> =>
+    this.handleErrors(async () => {
       const user = await userRepository.read({ id: userId });
       if (!user) {
         throw new ServiceError(StatusCodes.NOT_FOUND, {
@@ -758,33 +588,16 @@ class AuthenticationService {
         });
       }
 
-      // check for compromised password
-      // const isPasswordLeaked = await passwordUtil.checkLeakedPassword(
-      //   user.role,
-      //   password
-      // );
-      // if (isPasswordLeaked) {
-      //   throw new ServiceError(StatusCodes.BAD_REQUEST, {
-      //     message:
-      //       'This password has been compromised in data breaches. Please choose a different one.',
-      //     trace: {
-      //       method: this.resetPassword.name,
-      //       context: {
-      //         userId,
-      //         error: 'Compromised password',
-      //       },
-      //     },
-      //   });
-      // }
-
       const hashedPassword = await passwordUtil.hashSync(user.role, password);
       await userRepository.update(user.id, {
         password: hashedPassword,
       });
-      await redis.del(`refresh_token:${user.id}`);
-      await redis.del(`password_reset:${user.id}`);
 
-      const deviceLocation = await getLocationFromIp('24.48.0.1');
+      const cacheKey = `password_reset:${user.id}`;
+      await cacheUtil.delete(cacheKey);
+
+      const deviceLocation = await getLocationFromIp(device.ip);
+
       await authenticationQueue.add({
         email: user.email,
         subject: 'Your Password Was Changed',
@@ -808,24 +621,7 @@ class AuthenticationService {
         message:
           'Password has been reset successfully. Please log in with your new password.',
       };
-    } catch (error) {
-      if (error instanceof ServiceError) {
-        throw error; // rethrow expected error
-      }
-
-      throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
-        message: errorMessage,
-        trace: {
-          method: this.resetPassword.name,
-          context: {
-            userId,
-            error: error,
-            stack: error.stack,
-          },
-        },
-      });
-    }
-  };
+    }, this.resetPassword.name);
 }
 
 export const authenticationService = AuthenticationService.getInstance();
