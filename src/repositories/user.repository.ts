@@ -39,7 +39,13 @@ class UserRepository implements IUserRepository {
 
     if (query.email) {
       where.email = {
-        [Op.iLike]: `%${query.email.toLowerCase()}%`,
+        [Op.eq]: query.email.toLowerCase(),
+      };
+    }
+
+    if (query.phone) {
+      where.phone = {
+        [Op.eq]: query.phone,
       };
     }
 

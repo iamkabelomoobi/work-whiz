@@ -103,6 +103,7 @@ class UserController {
       });
       responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
     } catch (error) {
+      console.log(error);
       this.handleError(res, error);
     }
   };

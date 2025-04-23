@@ -1,18 +1,25 @@
 import { ServiceError } from '@work-whiz/errors';
-import { IUserService } from '@work-whiz/interfaces';
-import { IUser } from '@work-whiz/interfaces';
+import { IUserService, IUser } from '@work-whiz/interfaces';
 import { redis } from '@work-whiz/libs';
 import { userRepository } from '@work-whiz/repositories';
 import { passwordUtil } from '@work-whiz/utils';
 import { StatusCodes } from 'http-status-codes';
+import { BaseService } from './base.service';
 
-class Userservice implements IUserService {
+/**
+ * User service handling user-related operations like contact update,
+ * password update, and account deletion.
+ */
+class Userservice extends BaseService implements IUserService {
   private static instance: Userservice;
 
   private constructor() {
-    //
+    super();
   }
 
+  /**
+   * Returns the singleton instance of Userservice.
+   */
   public static getInstance(): Userservice {
     if (!Userservice.instance) {
       Userservice.instance = new Userservice();
@@ -20,28 +27,12 @@ class Userservice implements IUserService {
     return Userservice.instance;
   }
 
-  private async handleErrors<T>(
-    fn: () => Promise<T>,
-    method: string,
-  ): Promise<T> {
-    try {
-      return await fn();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      if (error instanceof ServiceError) throw error;
-      throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
-        message: 'An unexpected error occurred.',
-        trace: {
-          method,
-          context: {
-            error: error.message,
-            stack: error.stack,
-          },
-        },
-      });
-    }
-  }
-
+  /**
+   * Updates the user's email or phone number.
+   * Throws error if email or phone is already in use by another user.
+   * @param id - User ID
+   * @param data - Partial user object containing email and/or phone
+   */
   public updateContact = async (
     id: string,
     data: Partial<IUser>,
@@ -53,47 +44,51 @@ class Userservice implements IUserService {
           message: 'The requested user could not be found in the system.',
           trace: {
             method: this.updateContact.name,
-            context: {
-              error: 'User account does not exist or has been removed.',
-            },
+            context: { userId: id },
           },
         });
       }
 
-      const [userWithSameEmail, userWithPhone] = await Promise.all([
-        data.email ? userRepository.read({ email: data.email }) : null,
-        data.phone ? userRepository.read({ phone: data.phone }) : null,
+      const email = data.email?.toLowerCase().trim();
+      const phone = data.phone?.trim();
+
+      const [userWithSameEmail, userWithSamePhone] = await Promise.all([
+        email ? userRepository.read({ email }) : null,
+        phone ? userRepository.read({ phone }) : null,
       ]);
 
-      console.log(userWithPhone);
-      if (userWithSameEmail && userWithSameEmail.id !== user.id) {
+      if (userWithSameEmail && userWithSameEmail.id !== id) {
         throw new ServiceError(StatusCodes.BAD_REQUEST, {
           message: 'The provided email address is already in use.',
           trace: {
             method: this.updateContact.name,
-            context: { error: 'Email address already exists' },
+            context: { email },
           },
         });
       }
 
-      // skip if the phone hasn’t changed
-      if (userWithPhone.phone === data.phone) {
+      if (userWithSamePhone && userWithSamePhone.id !== id) {
         throw new ServiceError(StatusCodes.BAD_REQUEST, {
           message: 'The provided phone number is already in use.',
           trace: {
             method: this.updateContact.name,
-            context: { error: 'Phone number already exists' },
+            context: { phone },
           },
         });
       }
 
       const payload: Partial<IUser> = {};
-      if (data.email) payload.email = data.email;
-      if (data.phone) payload.phone = data.phone;
+      if (email) payload.email = email;
+      if (phone) payload.phone = phone;
 
       await userRepository.update(id, payload);
     }, this.updateContact.name);
 
+  /**
+   * Updates a user's password after validating the current password.
+   * @param id - User ID
+   * @param passwords - Object containing current and new password
+   */
   public updatePassword = async (
     id: string,
     passwords: { currentPassword: string; newPassword: string },
@@ -105,9 +100,7 @@ class Userservice implements IUserService {
           message: 'The requested user could not be found in the system.',
           trace: {
             method: this.updatePassword.name,
-            context: {
-              error: 'User account does not exist or has been removed.',
-            },
+            context: { userId: id },
           },
         });
       }
@@ -120,10 +113,10 @@ class Userservice implements IUserService {
 
       if (!isCurrentValid) {
         throw new ServiceError(StatusCodes.UNAUTHORIZED, {
-          message: 'The provided password is incorrect.',
+          message: 'The current password is incorrect.',
           trace: {
             method: this.updatePassword.name,
-            context: { error: 'Invalid password' },
+            context: { userId: id },
           },
         });
       }
@@ -140,7 +133,7 @@ class Userservice implements IUserService {
             'The new password cannot be the same as the current password.',
           trace: {
             method: this.updatePassword.name,
-            context: { error: 'New password is the same as current password' },
+            context: { userId: id },
           },
         });
       }
@@ -153,6 +146,10 @@ class Userservice implements IUserService {
       await userRepository.update(id, { password: hashedPassword });
     }, this.updatePassword.name);
 
+  /**
+   * Deletes a user account and removes their refresh token from Redis.
+   * @param id - User ID
+   */
   public deleteAccount = async (id: string): Promise<{ message: string }> =>
     this.handleErrors(async () => {
       const result = await userRepository.delete(id);
@@ -162,12 +159,12 @@ class Userservice implements IUserService {
           message: 'User account not found or could not be deleted.',
           trace: {
             method: this.deleteAccount.name,
-            context: { error: 'User account not found' },
+            context: { userId: id },
           },
         });
       }
 
-      await redis.del(`refresh_token${id}`);
+      await redis.del(`refresh_token:${id}`);
 
       return { message: 'User deleted successfully' };
     }, this.deleteAccount.name);

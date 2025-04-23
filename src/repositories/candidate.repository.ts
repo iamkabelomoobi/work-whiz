@@ -92,18 +92,6 @@ class CandidateRepository implements ICandidateRepository {
   }
 
   /**
-   * Creates a new repository instance bound to a transaction
-   * @param {Transaction} transaction - Sequelize transaction
-   * @returns {CandidateRepository} New repository instance with transaction
-   */
-  public withTransaction(transaction: Transaction): CandidateRepository {
-    const repository = new CandidateRepository();
-    repository.candidateModel = this.candidateModel;
-    repository.transaction = transaction;
-    return repository;
-  }
-
-  /**
    * Gets singleton repository instance
    * @static
    * @returns {CandidateRepository} The repository instance
@@ -193,7 +181,7 @@ class CandidateRepository implements ICandidateRepository {
    *   { page: 1, limit: 10 }
    * );
    */
-  public async readAll(
+  public readAll = async (
     query: ICandidateQuery,
     options: IPaginationQueryOptions,
   ): Promise<{
@@ -202,7 +190,7 @@ class CandidateRepository implements ICandidateRepository {
     totalPages: number;
     currentPage: number;
     perPage: number;
-  }> {
+  }> => {
     const pagination = new Pagination(options);
 
     try {
@@ -233,18 +221,18 @@ class CandidateRepository implements ICandidateRepository {
     } catch (error) {
       throw new RepositoryError('Failed to retrieve candidates', error);
     }
-  }
+  };
 
   /**
    * Updates a candidate by ID
-   * @param {string} id - Candidate ID to update
+   * @param {string} userId - Candidate User ID to update
    * @param {Partial<ICandidate>} data - Data to update
    * @param {Transaction} [transaction] - Optional transaction
    * @returns {Promise<ICandidate | null>} Updated candidate DTO if found, null otherwise
    * @throws {RepositoryError} If update fails
    */
   public async update(
-    id: string,
+    userId: string,
     data: Partial<ICandidate>,
     transaction?: Transaction,
   ): Promise<ICandidate | null> {
@@ -253,13 +241,13 @@ class CandidateRepository implements ICandidateRepository {
 
     try {
       const [affectedRows] = await this.candidateModel.update(data, {
-        where: { id },
+        where: this.buildWhereClause({ userId }),
         transaction: t,
         individualHooks: true,
       });
 
       if (affectedRows > 0) {
-        const updatedCandidate = await this.read({ id });
+        const updatedCandidate = await this.read({ userId });
         if (isLocalTransaction) {
           await t.commit();
         }
@@ -280,18 +268,21 @@ class CandidateRepository implements ICandidateRepository {
 
   /**
    * Deletes a candidate by ID
-   * @param {string} id - Candidate ID to delete
+   * @param {string} userId - Candidate User ID to delete
    * @param {Transaction} [transaction] - Optional transaction
    * @returns {Promise<boolean>} True if deletion succeeded, false otherwise
    * @throws {RepositoryError} If deletion fails
    */
-  public async delete(id: string, transaction?: Transaction): Promise<boolean> {
+  public async delete(
+    userId: string,
+    transaction?: Transaction,
+  ): Promise<boolean> {
     const t = transaction || (await sequelize.transaction());
     const isLocalTransaction = !transaction;
 
     try {
       const deletedRows = await this.candidateModel.destroy({
-        where: { id },
+        where: this.buildWhereClause({ userId }),
         transaction: t,
       });
 

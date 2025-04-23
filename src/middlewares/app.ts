@@ -16,6 +16,7 @@ import { swaggerSpec } from '@work-whiz/configs/swagger';
 import {
   AdminRoutes,
   AuthenticationRoutes,
+  CandidateRoutes,
   EmployerRoutes,
 } from '@work-whiz/routes';
 import { authenticationQueue } from '@work-whiz/queues';
@@ -68,7 +69,7 @@ export const configureMiddlewares = (app: Application): void => {
   );
 
   app.use(cookieParser());
-  app.use(lusca.csrf());
+  // app.use(lusca.csrf());
 
   app.use(express.json({ limit: '10kb' }));
   app.use(express.urlencoded({ extended: true, limit: '10kb' }));
@@ -102,5 +103,6 @@ export const configureMiddlewares = (app: Application): void => {
   const API_VERSION = 'v1';
   app.use(`/api/${API_VERSION}/auth`, new AuthenticationRoutes().init());
   app.use(`/api/${API_VERSION}/admins`, new AdminRoutes().init());
+  app.use(`/api/${API_VERSION}/candidates`, new CandidateRoutes().init());
   app.use(`/api/${API_VERSION}/employers`, new EmployerRoutes().init());
 };
