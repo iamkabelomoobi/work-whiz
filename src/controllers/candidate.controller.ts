@@ -121,7 +121,7 @@ class CandidateController {
 
   public getCandidate = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { userId } = req.params;
+      const userId = req.app.locals.userId;
       if (!userId) {
         throw new Error('User ID is required');
       }
@@ -155,7 +155,7 @@ class CandidateController {
     res: Response,
   ): Promise<void> => {
     try {
-      const { userId } = req.params;
+      const userId = req.app.locals.userId;
       const data = req.body as Partial<ICandidate>;
 
       if (!userId) {
