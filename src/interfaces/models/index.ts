@@ -6,4 +6,6 @@ export { ICandidate } from './candidate.model';
 
 export { IModelDictionary } from './model';
 
+export { IJob } from './job.model';
+
 export { IUser } from './user.model';
