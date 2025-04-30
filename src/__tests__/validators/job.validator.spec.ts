@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { validateJob } from '@work-whiz/validators';
 
 describe('Job Schema Validation', () => {
@@ -34,7 +35,6 @@ describe('Job Schema Validation', () => {
     it('should fail if responsibilities is not an array', () => {
       const invalidData = {
         ...validJobData,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         responsibilities: 'Not an array' as any,
       };
 
