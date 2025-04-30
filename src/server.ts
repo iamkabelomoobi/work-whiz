@@ -160,7 +160,9 @@ export const startServer = async (
     },
   } = options;
 
-  if (enableClusterMode && cluster.isPrimary) {
+  // Only enable cluster mode in production
+  const isProduction = env.NODE_ENV === 'production';
+  if (enableClusterMode && isProduction && cluster.isPrimary) {
     const numCPUs = os.cpus().length;
     logger.info(`Master ${process.pid} is running with ${numCPUs} workers`);
 
@@ -194,29 +196,8 @@ export const startServer = async (
       dbName: env.POSTGRES_DATABASE_NAME,
     });
 
-    // if (syncDatabase) {
-    //   await sequelize.sync({
-    //     force: forceSync,
-    //     alter: !forceSync && env.NODE_ENV === 'development',
-    //   });
-    //   logger.info(`Database sync completed`, {
-    //     force: forceSync,
-    //     alter: !forceSync && env.NODE_ENV === 'development',
-    //   });
-    // }
-
     if (enableHealthCheck) {
-      // app.get('/health', (req, res) => {
-      //   res.status(200).json({
-      //     status: 'UP',
-      //     timestamp: new Date().toISOString(),
-      //     uptime: process.uptime(),
-      //     database: sequelize.authenticate ? 'connected' : 'disconnected',
-      //   });
-      // });
-      // Health check route
       app.get('/health', (req, res) => {
-        // Sample health data - replace with your actual health metrics
         const healthData = {
           status: 'OK',
           services: [
@@ -228,7 +209,6 @@ export const startServer = async (
           timestamp: new Date().toISOString(),
         };
 
-        // Render the health.ejs template with the healthData
         res.render('health', healthData);
       });
     }
@@ -254,7 +234,7 @@ export const startServer = async (
           platform: os.platform(),
           pid: process.pid,
           environment: env.NODE_ENV,
-          clusterWorker: enableClusterMode && !cluster.isPrimary,
+          clusterWorker: enableClusterMode && isProduction && !cluster.isPrimary,
         });
 
         setupGracefulShutdown(server);
