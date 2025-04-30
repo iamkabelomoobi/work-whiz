@@ -149,7 +149,7 @@ export class AuthenticationController {
     res: Response,
   ): { refreshToken: string; userId: string } | null {
     const refreshToken = req.cookies.refresh_token;
-    const userId = req.app.locals.userId;
+    const { userId } = req.app.locals;
 
     if (!refreshToken || !userId) {
       responseUtil.sendError(res, {
@@ -308,7 +308,7 @@ export class AuthenticationController {
 
   public logout = async (req: Request, res: Response): Promise<void> => {
     try {
-      const userId = req.app.locals.userId;
+      const { userId } = req.app.locals;
 
       const response = await authenticationService.logout(userId);
 
@@ -345,7 +345,7 @@ export class AuthenticationController {
   public setupPassword = async (req: Request, res: Response): Promise<void> => {
     try {
       const { password } = req.body;
-      const userId = req.app.locals.userId;
+      const { userId } = req.app.locals;
 
       const passwordError = passwordValidator(password);
       if (passwordError) {
@@ -391,7 +391,9 @@ export class AuthenticationController {
   public refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
       const tokens = this.validateRefreshRequest(req, res);
-      if (!tokens) return;
+      if (!tokens) {
+        return;
+      }
 
       const { userId, refreshToken } = tokens;
 
@@ -475,7 +477,7 @@ export class AuthenticationController {
 
   public resetPassword = async (req: Request, res: Response): Promise<void> => {
     try {
-      const userId = req.app.locals.userId;
+      const { userId, userAgent } = req.app.locals;
       const { password } = req.body;
       // const ip = req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || req.ip;
 
@@ -487,7 +489,6 @@ export class AuthenticationController {
         });
       }
 
-      const userAgent = req.app.locals.userAgent;
       const response = await authenticationService.resetPassword(
         userId,
         password,
