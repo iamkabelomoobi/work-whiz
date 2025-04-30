@@ -10,7 +10,7 @@ export interface IJobService {
     userId: string,
     job: Omit<IJob, 'id'>,
   ) => Promise<{ message: string; job: IJob }>;
-  findJob: (query: IJobQuery) => Promise<IJob>;
+  findJob: (jobId: string) => Promise<IJob>;
   findJobs: (
     query: IJobQuery,
     options: IPaginationQueryOptions,

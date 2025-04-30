@@ -144,25 +144,25 @@ class JobService extends BaseService implements IJobService {
     }, this.createJob.name);
 
   /**
-   * Finds a job by query, first checking cache
-   * @param {IJobQuery} query - The query to find the job
+   * Finds a job by ID, first checking cache
+   * @param {string} jobId - The ID of the job to find
    * @returns {Promise<IJob>} The found job
    * @throws {ServiceError} If job is not found
    */
-  public findJob = async (query: IJobQuery): Promise<IJob> =>
+  public findJob = async (jobId: string): Promise<IJob> =>
     this.handleErrors(async () => {
-      const cacheKey = this.generateCacheKey(query?.id);
+      const cacheKey = this.generateCacheKey(jobId);
       const cachedJob = await cacheUtil.get(cacheKey);
 
       if (cachedJob) {
         return cachedJob as IJob;
       }
 
-      const job = await jobRepository.read(query);
+      const job = await jobRepository.read({ id: jobId });
       if (!job) {
         throw new ServiceError(StatusCodes.NOT_FOUND, {
           message: 'Sorry, job not found.',
-          trace: { method: this.findJob.name, context: { query } },
+          trace: { method: this.findJob.name, context: { jobId } },
         });
       }
 

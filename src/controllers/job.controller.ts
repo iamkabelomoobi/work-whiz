@@ -127,7 +127,7 @@ class JobController {
         });
         return;
       }
-      const job = await jobService.findJob({ id: jobId });
+      const job = await jobService.findJob(jobId);
 
       responseUtil.sendSuccess(res, {
         payload: job,
