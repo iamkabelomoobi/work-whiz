@@ -18,6 +18,7 @@ import {
   AuthenticationRoutes,
   CandidateRoutes,
   EmployerRoutes,
+  JobRoutes,
 } from '@work-whiz/routes';
 import { authenticationQueue } from '@work-whiz/queues';
 import { authenticationMiddleware } from './authentication.middleware';
@@ -97,7 +98,9 @@ export const configureMiddlewares = (app: Application): void => {
   // Swagger UI Route
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-  app.use(authenticationMiddleware.isAuthenticated);
+  if (process.env.NODE_ENV == 'production') {
+    app.use(authenticationMiddleware.isAuthenticated);
+  }
 
   // API Routes
   const API_VERSION = 'v1';
@@ -105,4 +108,5 @@ export const configureMiddlewares = (app: Application): void => {
   app.use(`/api/${API_VERSION}/admins`, new AdminRoutes().init());
   app.use(`/api/${API_VERSION}/candidates`, new CandidateRoutes().init());
   app.use(`/api/${API_VERSION}/employers`, new EmployerRoutes().init());
+  app.use(`/api/${API_VERSION}/jobs`, new JobRoutes().init());
 };
