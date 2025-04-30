@@ -6,6 +6,7 @@ type NormalizedError = {
   statusCode: number;
   message: string;
   details?: Record<string, unknown>;
+  code?: string; // Made optional here
 };
 
 class ResponseUtil {
@@ -33,8 +34,11 @@ class ResponseUtil {
     response.status(statusCode).json(payload);
   }
 
-  public sendError(response: Response, error: Error | NormalizedError) {
-    const normalizedError: NormalizedError =
+  public sendError(
+    response: Response,
+    error: Error | (NormalizedError & { code?: string }),
+  ) {
+    const normalizedError: NormalizedError & { code?: string } =
       'status' in error
         ? error
         : {
@@ -51,7 +55,10 @@ class ResponseUtil {
     const payload = {
       status: 'error',
       statusCode: normalizedError.statusCode,
-      error: { message: sanitizedMessage },
+      error: {
+        message: sanitizedMessage,
+        ...(normalizedError.code && { code: normalizedError.code }), // Only include if exists
+      },
       ...(sanitizedDetails && { details: sanitizedDetails }),
       timestamp: new Date().toISOString(),
     };
@@ -60,7 +67,10 @@ class ResponseUtil {
       status: payload.status,
       statusCode: payload.statusCode,
       timestamp: payload.timestamp,
-      error: { message: error || 'Error occurred' },
+      error: {
+        message: error.message || 'Error occurred',
+        ...(normalizedError.code && { code: normalizedError.code }),
+      },
       ...(sanitizedDetails && { details: sanitizedDetails }),
     });
     response.status(normalizedError.statusCode).json(payload);
