@@ -73,12 +73,7 @@ JobModel.init(
       allowNull: false,
     },
     type: {
-      type: DataTypes.ENUM(
-        'Full-time',
-        'Part-time',
-        'Contract',
-        'Internship',
-      ),
+      type: DataTypes.ENUM('Full-time', 'Part-time', 'Contract', 'Internship'),
       allowNull: false,
       defaultValue: 'Full-time',
     },

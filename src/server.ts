@@ -234,7 +234,8 @@ export const startServer = async (
           platform: os.platform(),
           pid: process.pid,
           environment: env.NODE_ENV,
-          clusterWorker: enableClusterMode && isProduction && !cluster.isPrimary,
+          clusterWorker:
+            enableClusterMode && isProduction && !cluster.isPrimary,
         });
 
         setupGracefulShutdown(server);

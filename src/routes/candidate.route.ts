@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { candidateController } from '@work-whiz/controllers/candidate.controller';
 import { userController } from '@work-whiz/controllers';
-import { profileLimiter, authorizationMiddleware } from '@work-whiz/middlewares';
+import {
+  profileLimiter,
+  authorizationMiddleware,
+} from '@work-whiz/middlewares';
 
 /**
  * @swagger

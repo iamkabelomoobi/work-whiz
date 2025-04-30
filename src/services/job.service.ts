@@ -186,7 +186,7 @@ class JobService extends BaseService implements IJobService {
       const cachedResults = await cacheUtil.get(searchCacheKey);
 
       console.debug(query);
-      
+
       if (cachedResults) {
         if (this.isValidPaginatedJobs(cachedResults)) {
           return cachedResults;

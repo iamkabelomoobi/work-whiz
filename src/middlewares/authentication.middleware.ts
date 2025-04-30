@@ -87,7 +87,7 @@ class AuthenticationMiddleware {
         role: decodedToken.role,
       });
     } catch (error) {
-      console.error(error)
+      console.error(error);
       if (error.name === 'TokenExpiredError') {
         throw {
           code: 'TOKEN_EXPIRED',
