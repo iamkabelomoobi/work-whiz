@@ -2,7 +2,8 @@
 import { DataTypes, Model, Association } from 'sequelize';
 import { UserModel } from './user.model';
 import { sequelize } from '@work-whiz/libs';
-import { IEmployer } from '@work-whiz/interfaces';
+import { IEmployer, IModelDictionary } from '@work-whiz/interfaces';
+import { JobModel } from './job.model';
 
 /**
  * Employer database model representing companies/organizations
@@ -28,15 +29,27 @@ class EmployerModel extends Model<IEmployer> implements IEmployer {
 
   public static associations: {
     user: Association<EmployerModel, any>;
+    job: Association<EmployerModel, JobModel>;
   };
 
-  public static associate(models: any) {
+  public static associate(models: IModelDictionary) {
     EmployerModel.belongsTo(models.UserModel, {
       foreignKey: {
         name: 'userId',
         allowNull: false,
       },
       as: 'user',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+      hooks: true,
+      constraints: true,
+    });
+    EmployerModel.hasMany(models.JobModel, {
+      foreignKey: {
+        name: 'employerId',
+        allowNull: true,
+      },
+      as: 'jobs',
       onDelete: 'CASCADE',
       onUpdate: 'CASCADE',
       hooks: true,

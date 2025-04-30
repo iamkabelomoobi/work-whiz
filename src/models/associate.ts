@@ -1,18 +1,21 @@
+import { IModelDictionary } from '@work-whiz/interfaces';
 import { AdminModel } from './admin.model';
 import { CandidateModel } from './candidate.model';
 import { EmployerModel } from './employer.model';
+import { JobModel } from './job.model';
 import { UserModel } from './user.model';
 
-const models = {
+const models: IModelDictionary = {
   AdminModel,
   CandidateModel,
   EmployerModel,
+  JobModel,
   UserModel,
 };
 
 const associateModels = () => {
   Object.values(models).forEach(model => {
-    if (model.associate) {
+    if ('associate' in model && typeof model.associate === 'function') {
       model.associate(models);
     }
   });

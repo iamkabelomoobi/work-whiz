@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { candidateController } from '@work-whiz/controllers/candidate.controller';
 import { userController } from '@work-whiz/controllers';
-import { profileLimiter, authorizationMiddleare } from '@work-whiz/middlewares';
+import {
+  profileLimiter,
+  authorizationMiddleware,
+} from '@work-whiz/middlewares';
 
 /**
  * @swagger
@@ -30,7 +33,7 @@ export class CandidateRoutes {
     this.router.get(
       '/me',
       profileLimiter,
-      authorizationMiddleare.isAuthorized,
+      authorizationMiddleware.isAuthorized,
       candidateController.getCandidate,
     );
 
@@ -51,7 +54,7 @@ export class CandidateRoutes {
     this.router.get(
       '/',
       profileLimiter,
-      authorizationMiddleare.isAuthorized,
+      authorizationMiddleware.isAuthorized,
       candidateController.getCandidates,
     );
 
@@ -80,7 +83,7 @@ export class CandidateRoutes {
     this.router.patch(
       '/me/contact',
       profileLimiter,
-      authorizationMiddleare.isAuthorized,
+      authorizationMiddleware.isAuthorized,
       userController.updateContact,
     );
 
@@ -109,7 +112,7 @@ export class CandidateRoutes {
     this.router.patch(
       '/me',
       profileLimiter,
-      authorizationMiddleare.isAuthorized,
+      authorizationMiddleware.isAuthorized,
       candidateController.updateCandidate,
     );
 

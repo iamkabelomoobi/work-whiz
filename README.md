@@ -120,8 +120,9 @@ Run the test suite using the following command:
 
 - [x] **`Task 1`**: <strike>User Authentication</strike>
 - [x] **`Task 2`**: <strike>Admin Profile Management.</strike>
-- [ ] **`Task 3`**: <strike>Candidate Profile Management.</strike>
+- [x] **`Task 3`**: <strike>Candidate Profile Management.</strike>
 - [x] **`Task 4`**: <strike>Employer Profile Management.</strike>
+- [x] **`Task 4`**: <strike>Job Listing Management.</strike>
 
 ---
 

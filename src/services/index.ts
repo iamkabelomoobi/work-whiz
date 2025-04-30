@@ -8,4 +8,6 @@ export { candidateService } from './candidate.service';
 
 export { employerService } from './employer.service';
 
+export { jobService } from './job.service';
+
 export { userService } from './user.service';

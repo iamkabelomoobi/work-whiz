@@ -6,4 +6,6 @@ export { CandidateModel } from './candidate.model';
 
 export { EmployerModel } from './employer.model';
 
+export { JobModel } from './job.model';
+
 export { UserModel } from './user.model';

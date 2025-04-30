@@ -6,7 +6,6 @@ import {
   passwordUtil,
   cacheUtil,
 } from '@work-whiz/utils';
-import { redis } from '@work-whiz/libs';
 import {
   adminRepository,
   candidateRepository,
@@ -594,7 +593,6 @@ class AuthenticationService extends BaseService {
 
       const cacheKey = `password_reset:${user.id}`;
       await cacheUtil.delete(cacheKey);
-
 
       await authenticationQueue.add({
         email: user.email,
