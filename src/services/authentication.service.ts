@@ -6,7 +6,6 @@ import {
   passwordUtil,
   cacheUtil,
 } from '@work-whiz/utils';
-import { redis } from '@work-whiz/libs';
 import {
   adminRepository,
   candidateRepository,
