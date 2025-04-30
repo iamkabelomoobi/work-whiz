@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import fs from 'fs';
 import path from 'path';
 import cookieParser from 'cookie-parser';
-// import lusca from 'lusca';
+import lusca from 'lusca';
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
@@ -69,7 +69,7 @@ export const configureMiddlewares = (app: Application): void => {
   );
 
   app.use(cookieParser());
-  // app.use(lusca.csrf());
+  app.use(lusca.csrf());
 
   app.use(express.json({ limit: '10kb' }));
   app.use(express.urlencoded({ extended: true, limit: '10kb' }));
