@@ -5,7 +5,7 @@ export const toIJobDTO = (job: IJob): IJob => {
     id: job.id,
     title: job.title,
     description: job.description,
-    responsibility: job.responsibility,
+    responsibilities: job.responsibilities,
     requirements: job.requirements,
     benefits: job.benefits,
     location: job.location,
@@ -16,7 +16,7 @@ export const toIJobDTO = (job: IJob): IJob => {
     employer: job.employer
       ? {
           id: job.employer.id,
-          avatarUrl: job.employer.user.avatarUrlavatarUrl,
+          avatarUrl: job.employer.user.avatarUrl,
           name: job.employer.name,
           email: job.employer.user.email,
           phone: job.employer.user.phone,
@@ -29,7 +29,7 @@ export const toIJobDTO = (job: IJob): IJob => {
         }
       : null,
     views: job.views,
-    isActive: job.isActive,
+    isPublic: job.isPublic,
     createdAt: job.createdAt || new Date(),
     updatedAt: job.updatedAt || new Date(),
   };

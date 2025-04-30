@@ -4,7 +4,7 @@ export { IEmployerQuery } from './employer.query';
 
 export { ICandidateQuery } from './candidate.query';
 
-export { IJobQuery } from './job.query';
+export { IJobQuery, IPaginatedJobs } from './job.query';
 
 export { IPaginationQueryOptions } from './pagination.query';
 

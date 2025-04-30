@@ -5,9 +5,9 @@ export const validateJob = (jobData: Partial<IJob>, isUpdate?: boolean) => {
   const options = {
     abortEarly: false,
   };
-  const { error } = !isUpdate
-    ? jobCreateSchema.validate(jobData, options)
-    : jobUpdateSchema.validate(jobData, options);
+  const { error } = isUpdate
+    ? jobUpdateSchema.validate(jobData, options)
+    : jobCreateSchema.validate(jobData, options);
 
   if (error) {
     return error;

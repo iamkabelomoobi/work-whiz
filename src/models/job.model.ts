@@ -8,7 +8,7 @@ class JobModel extends Model<IJob> implements IJob {
   public id!: string;
   public title!: string;
   public description!: string;
-  public responsibility!: string;
+  public responsibilities!: string[];
   public requirements!: string[];
   public benefits?: string[];
   public location!: string;
@@ -18,7 +18,7 @@ class JobModel extends Model<IJob> implements IJob {
   public tags!: string[];
   public employerId!: string;
   public views?: number;
-  public isActive?: boolean;
+  public isPublic?: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -56,8 +56,8 @@ JobModel.init(
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    responsibility: {
-      type: DataTypes.ARRAY(DataTypes.TEXT),
+    responsibilities: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
       allowNull: false,
     },
     requirements: {
@@ -77,7 +77,6 @@ JobModel.init(
         'Full-time',
         'Part-time',
         'Contract',
-        'Freelance',
         'Internship',
       ),
       allowNull: false,
@@ -100,7 +99,7 @@ JobModel.init(
       allowNull: true,
       defaultValue: 0,
     },
-    isActive: {
+    isPublic: {
       type: DataTypes.BOOLEAN,
       allowNull: true,
       defaultValue: true,

@@ -3,7 +3,7 @@ export interface IJob {
   id?: string;
   title: string;
   description: string;
-  responsibility: string;
+  responsibilities: string[];
   requirements: string[];
   benefits?: string[];
   location: string;
@@ -18,7 +18,7 @@ export interface IJob {
     phone?: string;
   };
   views?: number;
-  isActive?: boolean;
+  isPublic?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

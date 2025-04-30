@@ -3,45 +3,16 @@ import Joi from 'joi';
 const textFieldPattern = /^[a-zA-Z0-9\s\-.,:;!?()'"@#$%&*+/=<>[\]{}|\\^~`]+$/;
 const htmlTagPattern = /<[^>]*>/;
 
-const validationMessages = {
-  string: {
-    base: 'must be a string',
-    empty: 'cannot be empty',
-    required: 'is required',
-    pattern: {
-      base: 'contains invalid characters',
-      specialChars:
-        'should only contain letters, numbers, and standard punctuation',
-      noHtml: 'HTML tags are not allowed',
-    },
-  },
-  array: {
-    base: 'must be an array',
-    items: 'contains invalid items',
-  },
-  date: {
-    base: 'must be a valid date',
-    iso: 'must be in ISO format (YYYY-MM-DD)',
-  },
-  boolean: {
-    base: 'must be true or false',
-  },
-  number: {
-    base: 'must be a number',
-    integer: 'must be an integer',
-  },
-};
-
 export const jobCreateSchema = Joi.object({
   title: Joi.string()
     .required()
     .pattern(textFieldPattern)
     .pattern(htmlTagPattern, { invert: true })
     .messages({
-      'string.pattern.base': validationMessages.string.pattern.specialChars,
-      'string.pattern.invert.base': validationMessages.string.pattern.noHtml,
-      'string.empty': validationMessages.string.empty,
-      'any.required': validationMessages.string.required,
+      'string.pattern.base': 'Title contains invalid characters.',
+      'string.pattern.invert.base': 'Title must not contain HTML tags.',
+      'string.empty': 'Title is required and cannot be empty.',
+      'any.required': 'Title is a required field.',
     }),
 
   description: Joi.string()
@@ -49,21 +20,30 @@ export const jobCreateSchema = Joi.object({
     .pattern(textFieldPattern)
     .pattern(htmlTagPattern, { invert: true })
     .messages({
-      'string.pattern.base': validationMessages.string.pattern.specialChars,
-      'string.pattern.invert.base': validationMessages.string.pattern.noHtml,
-      'string.empty': validationMessages.string.empty,
-      'any.required': validationMessages.string.required,
+      'string.pattern.base': 'Description contains invalid characters.',
+      'string.pattern.invert.base': 'Description must not contain HTML tags.',
+      'string.empty': 'Description is required and cannot be empty.',
+      'any.required': 'Description is a required field.',
     }),
 
-  responsibility: Joi.string()
+  responsibilities: Joi.array()
+    .items(
+      Joi.string()
+        .pattern(textFieldPattern)
+        .pattern(htmlTagPattern, { invert: true })
+        .messages({
+          'string.pattern.base':
+            'Each responsibility contains invalid characters.',
+          'string.pattern.invert.base':
+            'Each responsibility must not contain HTML tags.',
+        }),
+    )
     .required()
-    .pattern(textFieldPattern)
-    .pattern(htmlTagPattern, { invert: true })
     .messages({
-      'string.pattern.base': validationMessages.string.pattern.specialChars,
-      'string.pattern.invert.base': validationMessages.string.pattern.noHtml,
-      'string.empty': validationMessages.string.empty,
-      'any.required': validationMessages.string.required,
+      'array.base': 'Responsibilities must be an array of strings.',
+      'array.includesRequiredUnknowns':
+        'Responsibilities must only contain valid strings.',
+      'any.required': 'Responsibilities is a required field.',
     }),
 
   requirements: Joi.array()
@@ -72,16 +52,18 @@ export const jobCreateSchema = Joi.object({
         .pattern(textFieldPattern)
         .pattern(htmlTagPattern, { invert: true })
         .messages({
-          'string.pattern.base': validationMessages.string.pattern.specialChars,
+          'string.pattern.base':
+            'Each requirement contains invalid characters.',
           'string.pattern.invert.base':
-            validationMessages.string.pattern.noHtml,
+            'Each requirement must not contain HTML tags.',
         }),
     )
     .required()
     .messages({
-      'array.base': validationMessages.array.base,
-      'array.includesRequiredUnknowns': validationMessages.array.items,
-      'any.required': validationMessages.string.required,
+      'array.base': 'Requirements must be an array of strings.',
+      'array.includesRequiredUnknowns':
+        'Requirements must only contain valid strings.',
+      'any.required': 'Requirements is a required field.',
     }),
 
   benefits: Joi.array()
@@ -90,21 +72,22 @@ export const jobCreateSchema = Joi.object({
         .pattern(textFieldPattern)
         .pattern(htmlTagPattern, { invert: true })
         .messages({
-          'string.pattern.base': validationMessages.string.pattern.specialChars,
+          'string.pattern.base': 'Each benefit contains invalid characters.',
           'string.pattern.invert.base':
-            validationMessages.string.pattern.noHtml,
+            'Each benefit must not contain HTML tags.',
         }),
     )
     .required()
     .messages({
-      'array.base': validationMessages.array.base,
-      'array.includesRequiredUnknowns': validationMessages.array.items,
-      'any.required': validationMessages.string.required,
+      'array.base': 'Benefits must be an array of strings.',
+      'array.includesRequiredUnknowns':
+        'Benefits must only contain valid strings.',
+      'any.required': 'Benefits is a required field.',
     }),
 
   location: Joi.string().required().messages({
-    'string.empty': validationMessages.string.empty,
-    'any.required': validationMessages.string.required,
+    'string.empty': 'Location is required and cannot be empty.',
+    'any.required': 'Location is a required field.',
   }),
 
   type: Joi.string()
@@ -112,21 +95,21 @@ export const jobCreateSchema = Joi.object({
     .required()
     .messages({
       'any.only':
-        'must be one of Full-time, Part-time, Contract, or Internship',
-      'any.required': validationMessages.string.required,
+        'Type must be one of Full-time, Part-time, Contract, or Internship.',
+      'any.required': 'Type is a required field.',
     }),
 
   vacancy: Joi.number().integer().min(1).optional().messages({
-    'number.base': validationMessages.number.base,
-    'number.integer': validationMessages.number.integer,
-    'number.min': 'must be at least 1',
+    'number.base': 'Vacancy must be a number.',
+    'number.integer': 'Vacancy must be an integer.',
+    'number.min': 'Vacancy must be at least 1.',
   }),
 
   deadline: Joi.date().iso().min('now').required().messages({
-    'date.base': validationMessages.date.base,
-    'date.iso': validationMessages.date.iso,
-    'date.min': 'must be in the future',
-    'any.required': validationMessages.string.required,
+    'date.base': 'Deadline must be a valid date.',
+    'date.iso': 'Deadline must be in ISO format.',
+    'date.min': 'Deadline must be in the future.',
+    'any.required': 'Deadline is a required field.',
   }),
 
   tags: Joi.array()
@@ -135,19 +118,19 @@ export const jobCreateSchema = Joi.object({
         .pattern(/^[a-zA-Z0-9\s-]+$/)
         .messages({
           'string.pattern.base':
-            'should only contain letters, numbers, spaces, and hyphens',
+            'Each tag should only contain letters, numbers, spaces, and hyphens.',
         }),
     )
     .max(10)
     .required()
     .messages({
-      'array.base': validationMessages.array.base,
-      'array.max': 'cannot have more than 10 tags',
-      'any.required': validationMessages.string.required,
+      'array.base': 'Tags must be an array of strings.',
+      'array.max': 'Tags cannot have more than 10 items.',
+      'any.required': 'Tags is a required field.',
     }),
 
   isPublic: Joi.boolean().optional().messages({
-    'boolean.base': validationMessages.boolean.base,
+    'boolean.base': 'isPublic must be a boolean value.',
   }),
 });
 

@@ -6,21 +6,11 @@ import {
   IJob,
   IJobQuery,
   IJobRepository,
+  IPaginatedJobs,
   IPaginationQueryOptions,
 } from '@work-whiz/interfaces';
 import { RepositoryError } from '@work-whiz/errors';
 import { Pagination } from '@work-whiz/utils';
-
-/**
- * Interface for paginated job results
- */
-interface IPaginatedJobs {
-  jobs: IJob[];
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  perPage: number;
-}
 
 /**
  * Job repository handling all database operations for jobs
@@ -67,11 +57,20 @@ class JobRepository implements IJobRepository {
   private buildWhereClause = (query: IJobQuery): WhereOptions => {
     const where: WhereOptions = {};
 
-    if (query.id) where.id = { [Op.eq]: query.id };
-    if (query.title) where.title = { [Op.iLike]: `%${query.title}%` };
-    if (query.employerId) where.employerId = { [Op.eq]: query.employerId };
-    if (typeof query.isActive === 'boolean') {
-      where.isActive = { [Op.eq]: query.isActive };
+    if (query.id) {
+      where.id = { [Op.eq]: query.id };
+    }
+    if (query.title) {
+      where.title = { [Op.iLike]: `%${query.title}%` }; // Case-insensitive search
+    }
+    if (query.employerId) {
+      where.employerId = { [Op.eq]: query.employerId };
+    }
+    if (typeof query.isPublic === 'boolean') {
+      where.isPublic = { [Op.eq]: query.isPublic };
+    }
+    if (query.location) {
+      where.location = { [Op.iLike]: `%${query.location}%` }; // Case-insensitive partial match
     }
 
     return where;
@@ -112,10 +111,32 @@ class JobRepository implements IJobRepository {
   public create = async (data: Partial<IJob>): Promise<IJob> => {
     try {
       const startTime = Date.now();
-      const job = await this.jobModel.create(data, this.getOptions());
+      const newJob = await this.jobModel.create(data, this.getOptions());
+
+      const jobWithEmployer = await this.jobModel.findOne({
+        where: this.buildWhereClause({ id: newJob.id }),
+        ...this.getOptions(),
+        include: [
+          {
+            model: EmployerModel,
+            as: 'employer',
+            attributes: ['id', 'name', 'industry'],
+            include: [
+              {
+                model: UserModel,
+                as: 'user',
+                attributes: ['email', 'phone'],
+                required: true,
+              },
+            ],
+            required: true,
+          },
+        ],
+        rejectOnEmpty: false,
+      });
 
       metrics.timing('job.create', Date.now() - startTime);
-      return toIJobDTO(job.get({ plain: true }));
+      return toIJobDTO(jobWithEmployer.get({ plain: true }));
     } catch (error: unknown) {
       metrics.increment('job.create.error');
       throw this.handleError('create', error);
@@ -179,7 +200,7 @@ class JobRepository implements IJobRepository {
       const { rows, count } = await this.jobModel.findAndCountAll({
         where: this.buildWhereClause(query),
         distinct: true,
-        col: 'JobModel.id',
+        col: 'id',
         offset: pagination.getOffset(),
         limit: pagination.limit,
         order: pagination.getOrder(),
@@ -187,12 +208,12 @@ class JobRepository implements IJobRepository {
         include: [
           {
             model: EmployerModel,
-            as: 'employer',
+            as: 'employer', // Ensure this matches the alias in the model definition
             attributes: ['id', 'name', 'industry'],
             include: [
               {
                 model: UserModel,
-                as: 'user',
+                as: 'user', // Ensure this matches the alias in the model definition
                 attributes: ['email', 'phone'],
                 required: true,
               },
