@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticationController } from '@work-whiz/controllers';
 import {
   authenticationMiddleware,
-  authorizationMiddleare,
+  authorizationMiddleware,
   userAgentParser,
   registerLimiter,
   loginLimiter,
@@ -38,7 +38,7 @@ export class AuthenticationRoutes {
         .post(
           '/password/set',
           setupPasswordLimiter,
-          authorizationMiddleare.authorizePasswordSetup,
+          authorizationMiddleware.authorizePasswordSetup,
           authenticationController.setupPassword,
         )
 
@@ -47,6 +47,8 @@ export class AuthenticationRoutes {
          * @description Login an existing user
          */
         .post('/login', loginLimiter, authenticationController.login)
+
+        .post('/refresh-token', authenticationController.refreshToken)
 
         /**
          * @route DELETE /logout
@@ -76,7 +78,7 @@ export class AuthenticationRoutes {
         .patch(
           '/password/change',
           resetPasswordLimiter,
-          authorizationMiddleare.authorizePasswordReset,
+          authorizationMiddleware.authorizePasswordReset,
           userAgentParser,
           authenticationController.resetPassword,
         )

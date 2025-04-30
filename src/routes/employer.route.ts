@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { employerController, userController } from '@work-whiz/controllers';
-import { profileLimiter, authorizationMiddleare } from '@work-whiz/middlewares';
+import {
+  profileLimiter,
+  authorizationMiddleware,
+} from '@work-whiz/middlewares';
 
 export class EmployerRoutes {
   constructor(private readonly router: Router = Router()) {}
@@ -33,7 +36,7 @@ export class EmployerRoutes {
         .get(
           '/me',
           profileLimiter,
-          authorizationMiddleare.isAuthorized,
+          authorizationMiddleware.authorizeEmployer,
           employerController.getEmployer,
         )
 
@@ -62,7 +65,7 @@ export class EmployerRoutes {
         .patch(
           '/me',
           profileLimiter,
-          authorizationMiddleare.isAuthorized,
+          authorizationMiddleware.authorizeEmployer,
           employerController.updateEmployer,
         )
 
@@ -111,7 +114,7 @@ export class EmployerRoutes {
         .patch(
           '/me/contact',
           profileLimiter,
-          authorizationMiddleare.isAuthorized,
+          authorizationMiddleware.authorizeEmployer,
           userController.updateContact,
         )
     );
