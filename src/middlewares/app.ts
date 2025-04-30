@@ -99,6 +99,13 @@ export const configureMiddlewares = (app: Application): void => {
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   if (process.env.NODE_ENV == 'production') {
+    const rateLimit = require('express-rate-limit');
+    const authRateLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 100, // limit each IP to 100 requests per windowMs
+      message: 'Too many requests, please try again later.',
+    });
+    app.use(authRateLimiter);
     app.use(authenticationMiddleware.isAuthenticated);
   }
 
