@@ -121,7 +121,7 @@ class AuthorizationMiddleware extends BaseAuthorization {
       // Then in your middleware:
       await isAuthenticatedAsync(req, res);
 
-      const user = req.app.locals?.user; 
+      const user = req.app.locals?.user;
 
       if (!user) {
         return responseUtil.sendError(res, {

@@ -594,7 +594,6 @@ class AuthenticationService extends BaseService {
       const cacheKey = `password_reset:${user.id}`;
       await cacheUtil.delete(cacheKey);
 
-
       await authenticationQueue.add({
         email: user.email,
         subject: 'Your Password Was Changed',

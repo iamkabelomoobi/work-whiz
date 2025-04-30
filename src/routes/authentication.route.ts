@@ -48,7 +48,11 @@ export class AuthenticationRoutes {
          */
         .post('/login', loginLimiter, authenticationController.login)
 
-        .post('/refresh-token', loginLimiter, authenticationController.refreshToken)
+        .post(
+          '/refresh-token',
+          loginLimiter,
+          authenticationController.refreshToken,
+        )
 
         /**
          * @route DELETE /logout
