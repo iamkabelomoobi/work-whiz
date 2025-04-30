@@ -1,32 +1,62 @@
 import { jwtUtil, logger, responseUtil } from '@work-whiz/utils';
 import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { authenticationMiddleware } from './authentication.middleware';
+import { validateInput } from '@work-whiz/validators';
+import { IDecodedJwtToken } from '@work-whiz/interfaces';
+import { JwtType } from '@work-whiz/types';
 
-class AuthorizationMiddleware {
-  private static instance: AuthorizationMiddleware;
-
-  private constructor() {
-    //
-  }
-
-  public static getInstance(): AuthorizationMiddleware {
-    if (!AuthorizationMiddleware.instance) {
-      AuthorizationMiddleware.instance = new AuthorizationMiddleware();
-    }
-    return AuthorizationMiddleware.instance;
+abstract class BaseAuthorization {
+  /**
+   * Validates a JWT token's basic structure and type
+   * @param token The JWT token to validate
+   * @param expectedType The expected token type
+   * @returns Object containing decoded token and validation status
+   */
+  protected validateToken(
+    token: string,
+    expectedType: string,
+  ): { decoded: IDecodedJwtToken | null; valid: boolean } {
+    const decoded = jwtUtil.decode(token) as IDecodedJwtToken;
+    const valid = !!decoded && decoded.type === expectedType;
+    return { decoded, valid };
   }
 
   /**
-   * Middleware to authorize a user based on the refresh token stored in an HTTP-only cookie.
-   *
-   * This checks for the 'refresh_token' cookie, decodes and verifies it.
-   * If valid, attaches the user ID to `req.app.locals.userId`.
-   *
-   * @param {Request} req - Express request object
-   * @param {Response} res - Express response object
-   * @param {NextFunction} next - Express next middleware function
-   *
-   * @returns {Promise<void>} - Calls next() if authorization is successful, otherwise sends 401 error.
+   * Verifies a JWT token's signature and validity
+   * @param token The JWT token to verify
+   * @param type Expected token type
+   * @param role Optional expected role
+   * @returns Verified token payload
+   */
+  protected async verifyToken(
+    role: string,
+    token: string,
+    type: JwtType,
+  ): Promise<IDecodedJwtToken> {
+    return jwtUtil.verify({ role, token, type });
+  }
+}
+
+class AuthorizationMiddleware extends BaseAuthorization {
+  private static instance: AuthorizationMiddleware;
+
+  private constructor() {
+    super();
+  }
+
+  public static getInstance(): AuthorizationMiddleware {
+    return (
+      AuthorizationMiddleware.instance ||
+      (AuthorizationMiddleware.instance = new AuthorizationMiddleware())
+    );
+  }
+
+  /**
+   * Authorizes a user based on refresh token
+   * @param req Express request object
+   * @param res Express response object
+   * @param next Express next function
    */
   public isAuthorized = async (
     req: Request,
@@ -37,162 +67,164 @@ class AuthorizationMiddleware {
       const refreshToken = req.cookies['refresh_token'];
       if (!refreshToken) {
         return responseUtil.sendError(res, {
-          message: 'Missing refresh token.',
+          message: 'Missing refresh token',
           statusCode: StatusCodes.UNAUTHORIZED,
+          code: 'MISSING_REFRESH_TOKEN',
         });
       }
 
-      const decoded = jwtUtil.decode(refreshToken);
-      if (!decoded || typeof decoded !== 'object') {
+      const { decoded, valid } = this.validateToken(refreshToken, 'refresh');
+      if (!valid || !decoded) {
         return responseUtil.sendError(res, {
-          message: 'Invalid refresh token.',
+          message: 'Invalid refresh token',
           statusCode: StatusCodes.UNAUTHORIZED,
+          code: 'INVALID_REFRESH_TOKEN',
         });
       }
 
-      const verified = await jwtUtil.verify({
-        token: refreshToken,
-        type: decoded.type,
-        role: decoded.role,
-      });
-
-      if (!verified) {
-        return responseUtil.sendError(res, {
-          message: 'Invalid or expired refresh token.',
-          statusCode: StatusCodes.UNAUTHORIZED,
-        });
-      }
+      const verified = await this.verifyToken(
+        decoded.role,
+        refreshToken,
+        decoded.type,
+      );
 
       req.app.locals.userId = verified.id;
       next();
     } catch (error) {
+      logger.error('Authorization failed:', error);
       responseUtil.sendError(res, {
-        message: 'Invalid or expired token.',
+        message: 'Authorization failed',
         statusCode: StatusCodes.UNAUTHORIZED,
+        code: 'AUTHORIZATION_FAILED',
       });
     }
   };
 
   /**
-   * Middleware to authorize password setup
-   * @param req - Express request object
-   * @param res - Express response object
-   * @param next - Next function to call the next middleware
+   * Authorizes employer-only access
+   * @param req Express request object
+   * @param res Express response object
+   * @param next Express next function
+   */
+  public authorizeEmployer = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      // Wrap the callback in a Promise for better error handling
+      await new Promise<void>((resolve, reject) => {
+        authenticationMiddleware.isAuthenticated(req, res, err => {
+          err ? reject(err) : resolve();
+        });
+      });
+
+      const user = req.app.locals?.user; // Safely access user object
+      console.info('User from locals:', user);
+
+      if (!user) {
+        return responseUtil.sendError(res, {
+          message: 'User authentication missing',
+          statusCode: StatusCodes.UNAUTHORIZED,
+          code: 'MISSING_AUTHENTICATION',
+        });
+      }
+
+      if (!validateInput(user.role, 'employer')) {
+        return responseUtil.sendError(res, {
+          message: 'Employer role required',
+          statusCode: StatusCodes.FORBIDDEN,
+          code: 'ROLE_FORBIDDEN',
+        });
+      }
+
+      req.app.locals.userId = user.id;
+
+      next();
+    } catch (error) {
+      logger.error('Employer authorization failed:', error);
+      responseUtil.sendError(res, {
+        message: 'Authorization failed',
+        statusCode: StatusCodes.UNAUTHORIZED,
+        code: 'AUTHORIZATION_FAILED',
+      });
+    }
+  };
+
+  /**
+   * Authorizes password setup
+   * @param req Express request object
+   * @param res Express response object
+   * @param next Express next function
    */
   public authorizePasswordSetup = async (
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    try {
-      const {
-        password,
-        passwordToken,
-      }: { password: string; passwordToken: string } = req.body;
-
-      if (!password || !passwordToken) {
-        responseUtil.sendError(res, {
-          message: 'Password and token are required.',
-          statusCode: StatusCodes.BAD_GATEWAY,
-        });
-      }
-
-      const decodedPasswordToken = jwtUtil.decode(passwordToken);
-      if (!decodedPasswordToken) {
-        responseUtil.sendError(res, {
-          message: 'Invalid password token.',
-          statusCode: StatusCodes.UNAUTHORIZED,
-        });
-      }
-
-      if (decodedPasswordToken.type !== 'password_setup') {
-        responseUtil.sendError(res, {
-          message: 'Invalid token type',
-          statusCode: StatusCodes.UNAUTHORIZED,
-        });
-      }
-
-      const verifiedPasswordToken = await jwtUtil.verify({
-        role: decodedPasswordToken.role,
-        token: passwordToken,
-        type: decodedPasswordToken.type,
-      });
-      if (!verifiedPasswordToken) {
-        responseUtil.sendError(res, {
-          message: 'Invalid password token',
-          statusCode: StatusCodes.UNAUTHORIZED,
-        });
-      }
-
-      req.app.locals.userId = verifiedPasswordToken.id;
-      next();
-    } catch (error) {
-      logger.error('Error in authorizing password setup:', error);
-
-      responseUtil.sendError(res, {
-        message: 'Error in authorizing password setup',
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-      });
-    }
+    await this.handlePasswordOperation(req, res, next, 'password_setup');
   };
 
   /**
-   * Middleware to authorize password reset
-   * @param req - Express request object
-   * @param res - Express response object
-   * @param next - Next function to call the next middleware
+   * Authorizes password reset
+   * @param req Express request object
+   * @param res Express response object
+   * @param next Express next function
    */
   public authorizePasswordReset = async (
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
+    await this.handlePasswordOperation(req, res, next, 'password_reset');
+  };
+
+  /**
+   * Handles common password operation logic
+   */
+  private async handlePasswordOperation(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+    tokenType: 'password_setup' | 'password_reset',
+  ): Promise<void> {
     try {
-      const { password, token }: { password: string; token: string } = req.body;
+      const { password, token } = req.body;
 
       if (!password || !token) {
-        responseUtil.sendError(res, {
-          message: 'Password and token are required.',
-          statusCode: StatusCodes.BAD_GATEWAY,
+        return responseUtil.sendError(res, {
+          message: 'Password and token are required',
+          statusCode: StatusCodes.BAD_REQUEST,
+          code: 'MISSING_CREDENTIALS',
         });
       }
 
-      const decodedPasswordToken = jwtUtil.decode(token);
-      if (!decodedPasswordToken) {
-        responseUtil.sendError(res, {
-          message: 'Invalid password token.',
+      const { decoded, valid } = this.validateToken(token, tokenType);
+      if (!valid || !decoded) {
+        return responseUtil.sendError(res, {
+          message: `Invalid ${tokenType.replace('_', ' ')} token`,
           statusCode: StatusCodes.UNAUTHORIZED,
-        });
-      }
-      if (decodedPasswordToken.type !== 'password_reset') {
-        responseUtil.sendError(res, {
-          message: 'Invalid token type',
-          statusCode: StatusCodes.UNAUTHORIZED,
+          code: 'INVALID_TOKEN',
         });
       }
 
-      const verifiedPasswordToken = await jwtUtil.verify({
-        role: decodedPasswordToken.role,
+      const verified = await this.verifyToken(
+        decoded.role,
         token,
-        type: decodedPasswordToken.type,
-      });
-      if (!verifiedPasswordToken) {
-        responseUtil.sendError(res, {
-          message: 'Invalid password token',
-          statusCode: StatusCodes.UNAUTHORIZED,
-        });
-      }
+        decoded.type,
+      );
 
-      req.app.locals.userId = verifiedPasswordToken.id;
+      req.app.locals.userId = verified.id;
       next();
     } catch (error) {
-      console.error(error);
+      logger.error(`${tokenType} authorization failed:`, error);
       responseUtil.sendError(res, {
-        message: 'Invalid or expired token',
+        message: 'Authorization failed',
         statusCode: StatusCodes.UNAUTHORIZED,
+        code: 'AUTHORIZATION_FAILED',
       });
     }
-  };
+  }
 }
 
-export const authorizationMiddleare = AuthorizationMiddleware.getInstance();
+export const authorizationMiddleware = AuthorizationMiddleware.getInstance();

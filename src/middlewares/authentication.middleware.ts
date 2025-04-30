@@ -1,113 +1,165 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { responseUtil, jwtUtil, logger } from '@work-whiz/utils';
+import { responseUtil, jwtUtil } from '@work-whiz/utils';
 import { validateInput } from '@work-whiz/validators';
 
+interface DecodedToken {
+  type: string;
+  role?: string;
+  [key: string]: any;
+}
+
+/**
+ * Authentication middleware handling JWT verification and token refresh
+ * @class AuthenticationMiddleware
+ */
 class AuthenticationMiddleware {
   private static instance: AuthenticationMiddleware;
+
+  /**
+   * Extracts and validates token from request headers
+   * @private
+   * @param {Request} req - Express request object
+   * @returns {string} The extracted token
+   * @throws {Object} Error object if token is missing or malformed
+   */
+  private extractToken(req: Request): string {
+    const authHeader = req.headers['authorization'] as string;
+
+    if (!authHeader) {
+      throw {
+        code: 'MISSING_AUTH_HEADER',
+        message: "Authorization header required ('Bearer <TOKEN>')",
+        statusCode: StatusCodes.UNAUTHORIZED,
+      };
+    }
+
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+      throw {
+        code: 'INVALID_AUTH_FORMAT',
+        message: "Invalid format. Use 'Bearer <TOKEN>'",
+        statusCode: StatusCodes.UNAUTHORIZED,
+      };
+    }
+
+    return parts[1];
+  }
+
+  /**
+   * Validates the decoded token structure
+   * @private
+   * @param {string} token - The JWT token
+   * @returns {DecodedToken} The decoded token
+   * @throws {Object} Error object if token is invalid
+   */
+  private validateToken(token: string): DecodedToken {
+    const decodedToken = jwtUtil.decode(token) as DecodedToken;
+
+    if (!decodedToken || !validateInput(decodedToken?.type, 'access')) {
+      throw {
+        code: 'INVALID_TOKEN_TYPE',
+        message: 'Invalid token type',
+        statusCode: StatusCodes.UNAUTHORIZED,
+      };
+    }
+
+    return decodedToken;
+  }
+
+  /**
+   * Verifies the JWT token
+   * @private
+   * @param {string} token - The JWT token
+   * @param {DecodedToken} decodedToken - The decoded token
+   * @returns {Promise<any>} The verified token payload
+   * @throws {Object} Error object if verification fails
+   */
+  private async verifyToken(
+    token: string,
+    decodedToken: DecodedToken,
+  ): Promise<any> {
+    try {
+      return await jwtUtil.verify({
+        token,
+        type: 'access',
+        role: decodedToken.role,
+      });
+    } catch (error) {
+      console.error(error)
+      if (error.name === 'TokenExpiredError') {
+        throw {
+          code: 'TOKEN_EXPIRED',
+          message: 'Access token expired',
+          statusCode: StatusCodes.UNAUTHORIZED,
+          originalError: error,
+        };
+      }
+      throw {
+        code: 'TOKEN_VERIFICATION_FAILED',
+        message: 'Token verification failed',
+        statusCode: StatusCodes.UNAUTHORIZED,
+        originalError: error,
+      };
+    }
+  }
+
+  /**
+   * Handles authentication errors
+   * @private
+   * @param {any} error - The error object
+   * @param {Response} res - Express response object
+   */
+  private handleError(error: any, res: Response): void {
+    const response = {
+      message: error.message || 'Authentication failed',
+      statusCode: error.statusCode || StatusCodes.UNAUTHORIZED,
+      code: error.code || 'AUTH_FAILED',
+      ...(process.env.NODE_ENV === 'development' && {
+        details: error.originalError?.message,
+      }),
+    };
+
+    responseUtil.sendError(res, response);
+  }
 
   private constructor() {
     //
   }
 
+  /**
+   * Get singleton instance of AuthenticationMiddleware
+   * @returns {AuthenticationMiddleware} The singleton instance
+   */
   public static getInstance(): AuthenticationMiddleware {
-    if (!AuthenticationMiddleware.instance) {
-      AuthenticationMiddleware.instance = new AuthenticationMiddleware();
-    }
-    return AuthenticationMiddleware.instance;
+    return (
+      AuthenticationMiddleware.instance ||
+      (AuthenticationMiddleware.instance = new AuthenticationMiddleware())
+    );
   }
 
   /**
-   * Middleware to validate API key authentication via the 'X-Authorization' header.
-   *
-   * The expected header format is: 'X-Authorization: Bearer <API_KEY>'.
-   * If the header is missing, incorrectly formatted, or the API key is invalid,
-   * the request will be rejected with a 401 Unauthorized response.
-   *
+   * Main authentication middleware that verifies JWT tokens
    * @param {Request} req - Express request object
    * @param {Response} res - Express response object
-   * @param {NextFunction} next - Express next middleware function
-   *
-   * @returns {Promise<void>} - Calls next() if authentication is successful
+   * @param {NextFunction} next - Express next function
+   * @returns {Promise<void>}
    */
   public isAuthenticated = async (
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    const AUTH_HEADER = 'x-authorization';
-    const authHeader = req.headers[AUTH_HEADER] as string;
-
-    if (!authHeader) {
-      return responseUtil.sendError(res, {
-        message:
-          "Missing or invalid API key. Provide it in the 'X-Authorization: Bearer <API_KEY>' header.",
-        statusCode: StatusCodes.UNAUTHORIZED,
-      });
-    }
-
-    const [scheme, token] = authHeader.split(' ');
-
-    if (scheme !== 'Bearer' || !token) {
-      return responseUtil.sendError(res, {
-        message: "Invalid API key format. Use 'Bearer <API_KEY>'.",
-        statusCode: StatusCodes.UNAUTHORIZED,
-      });
-    }
-
-    const isValid = validateInput(token, process.env.API_KEY as string);
-    if (!isValid) {
-      return responseUtil.sendError(res, {
-        message: 'Invalid or expired API key.',
-        statusCode: StatusCodes.UNAUTHORIZED,
-      });
-    }
-
-    next();
-  };
-
-  public sAuthenticated = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
-    const authorizationHeader = req.headers['x-authorization'] as string;
-
-    if (!authorizationHeader) {
-      responseUtil.sendError(res, {
-        message:
-          "Missing or invalid API key. Provide it in the 'X-Authorization: Bearer <TOKEN>' header.",
-        statusCode: StatusCodes.UNAUTHORIZED,
-      });
-      return;
-    }
-
-    const parts = authorizationHeader.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      responseUtil.sendError(res, {
-        message: "Invalid Authorization header format. Use 'Bearer <TOKEN>'.",
-        statusCode: StatusCodes.UNAUTHORIZED,
-      });
-      return;
-    }
-
-    const token = parts[1];
-    const decodedToken = jwtUtil.decode(token);
     try {
-      const decoded = await jwtUtil.verify({
-        token,
-        type: 'access',
-        role: decodedToken.role,
-      });
+      const token = this.extractToken(req);
+      const decodedToken = this.validateToken(token);
+      const verifiedToken = await this.verifyToken(token, decodedToken);
 
-      req.app.locals.userId = decoded.id;
+      req.app.locals.user = verifiedToken;
       next();
     } catch (error) {
-      logger.error('Token verification error:', error);
-      responseUtil.sendError(res, {
-        message: 'Invalid or expired token',
-        statusCode: StatusCodes.UNAUTHORIZED,
-      });
+      this.handleError(error, res);
     }
   };
 }
