@@ -22,6 +22,7 @@ import {
 } from '@work-whiz/routes';
 import { authenticationQueue } from '@work-whiz/queues';
 import { authenticationMiddleware } from './authentication.middleware';
+import rateLimit from 'express-rate-limit';
 
 export const configureMiddlewares = (app: Application): void => {
   const serverAdapter = new ExpressAdapter();
@@ -98,14 +99,16 @@ export const configureMiddlewares = (app: Application): void => {
   // Swagger UI Route
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-  if (process.env.NODE_ENV == 'production') {
-    const rateLimit = require('express-rate-limit');
-    const authRateLimiter = rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 100, // limit each IP to 100 requests per windowMs
+  // Rate limiter middleware
+  if (process.env.NODE_ENV === 'production') {
+    const limiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 100,
       message: 'Too many requests, please try again later.',
+      standardHeaders: true,
+      legacyHeaders: false,
     });
-    app.use(authRateLimiter);
+    app.use(limiter);
     app.use(authenticationMiddleware.isAuthenticated);
   }
 
