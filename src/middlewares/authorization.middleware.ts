@@ -1,3 +1,4 @@
+import { promisify } from 'util';
 import { jwtUtil, logger, responseUtil } from '@work-whiz/utils';
 import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -112,15 +113,15 @@ class AuthorizationMiddleware extends BaseAuthorization {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      // Wrap the callback in a Promise for better error handling
-      await new Promise<void>((resolve, reject) => {
-        authenticationMiddleware.isAuthenticated(req, res, err => {
-          err ? reject(err) : resolve();
-        });
-      });
+      // Instead of manually wrapping the callback:
+      const isAuthenticatedAsync = promisify(
+        authenticationMiddleware.isAuthenticated.bind(authenticationMiddleware),
+      );
 
-      const user = req.app.locals?.user; // Safely access user object
-      console.info('User from locals:', user);
+      // Then in your middleware:
+      await isAuthenticatedAsync(req, res);
+
+      const user = req.app.locals?.user; 
 
       if (!user) {
         return responseUtil.sendError(res, {
