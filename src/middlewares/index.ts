@@ -2,7 +2,7 @@ export { configureMiddlewares } from './app';
 
 export { authenticationMiddleware } from './authentication.middleware';
 
-export { authorizationMiddleare } from './authorization.middleware';
+export { authorizationMiddleware } from './authorization.middleware';
 
 export {
   profileLimiter,
