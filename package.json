@@ -7,7 +7,8 @@
     "build": "nx build",
     "format": "nx format",
     "lint": "nx lint",
-    "test": "nx test"
+    "test": "nx test",
+    "test:coverage": "nx test --coverage"
   },
   "private": true,
   "dependencies": {
