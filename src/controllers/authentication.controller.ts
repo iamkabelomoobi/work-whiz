@@ -268,11 +268,12 @@ export class AuthenticationController {
         });
       }
 
-      // Retrieve the IP header, which might contain multiple comma-separated IPs from proxies
-      const ipHeader = req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || req.ip;
+      const ipHeader =
+        req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || req.ip;
 
-      // Split the header on commas and take the first IP, ensuring it is trimmed of whitespace
-      const ip = ipHeader.split(',')[0].trim();
+      const ip = Array.isArray(ipHeader)
+        ? ipHeader[0].trim()
+        : ipHeader.split(',')[0].trim();
 
       const response = await authenticationService.resetPassword(
         userId,
@@ -287,7 +288,6 @@ export class AuthenticationController {
 
       responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
     } catch (error) {
-      console.error('Reset Password Error:', error); // Log the error
       responseUtil.sendError(res, {
         message:
           error.message || 'An error occurred while resetting the password',
