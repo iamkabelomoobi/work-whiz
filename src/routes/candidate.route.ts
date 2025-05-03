@@ -33,7 +33,7 @@ export class CandidateRoutes {
     this.router.get(
       '/me',
       profileLimiter,
-      authorizationMiddleware.isAuthorized,
+      authorizationMiddleware.isAuthorized(['admin', 'candidate', 'employer']),
       candidateController.getCandidate,
     );
 
@@ -54,7 +54,7 @@ export class CandidateRoutes {
     this.router.get(
       '/',
       profileLimiter,
-      authorizationMiddleware.isAuthorized,
+      authorizationMiddleware.isAuthorized(['admin', 'candidate', 'employer']),
       candidateController.getCandidates,
     );
 
@@ -83,7 +83,7 @@ export class CandidateRoutes {
     this.router.patch(
       '/me/contact',
       profileLimiter,
-      authorizationMiddleware.isAuthorized,
+      authorizationMiddleware.isAuthorized(['candidate']),
       userController.updateContact,
     );
 
@@ -112,8 +112,102 @@ export class CandidateRoutes {
     this.router.patch(
       '/me',
       profileLimiter,
-      authorizationMiddleware.isAuthorized,
+      authorizationMiddleware.isAuthorized(['candidate']),
       candidateController.updateCandidate,
+    );
+
+    /**
+     * @swagger
+     * /api/candidate/me/contact:
+     *   patch:
+     *     summary: Update candidate contact info
+     *     tags: [Candidate]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               phone:
+     *                 type: string
+     *                 example: "+2348123456789"
+     *               email:
+     *                 type: string
+     *                 format: email
+     *                 example: "candidate@example.com"
+     *     responses:
+     *       200:
+     *         description: Contact info updated
+     *       400:
+     *         description: Validation error
+     *       401:
+     *         description: Unauthorized
+     */
+    this.router.patch(
+      '/me/contact',
+      profileLimiter,
+      authorizationMiddleware.isAuthorized(['candidate']),
+      userController.updateContact,
+    );
+
+    /**
+     * @swagger
+     * /api/candidates/me/password:
+     *   patch:
+     *     summary: Update candidate password
+     *     tags: [Candidate]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               currentPassword:
+     *                 type: string
+     *                 example: "currentpassword123"
+     *               newPassword:
+     *                 type: string
+     *                 example: "newpassword123"
+     *     responses:
+     *       200:
+     *         description: Password updated successfully
+     *       400:
+     *         description: Validation error
+     *       401:
+     *         description: Unauthorized
+     */
+    this.router.patch(
+      '/me/password',
+      profileLimiter,
+      authorizationMiddleware.isAuthorized(['candidate']),
+      userController.updatePassword,
+    );
+
+    /**
+     * @swagger
+     * /api/candidates/me:
+     *   delete:
+     *     summary: Delete current candidate account
+     *     tags: [Candidate]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Account deleted successfully
+     *       401:
+     *         description: Unauthorized
+     */
+    this.router.delete(
+      '/me',
+      profileLimiter,
+      authorizationMiddleware.isAuthorized(['candidate']),
+      userController.deleteAccount,
     );
 
     return this.router;

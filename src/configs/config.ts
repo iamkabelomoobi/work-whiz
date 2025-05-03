@@ -2,6 +2,7 @@ import { IConfig } from '@work-whiz/interfaces';
 
 const {
   // Authentication Secrets
+  API_SECRET_KEY,
   ADMIN_ACCESS_KEY,
   EMPLOYER_ACCESS_KEY,
   CANDIDATE_ACCESS_KEY,
@@ -55,6 +56,9 @@ const {
  */
 export const config: IConfig = {
   authentication: {
+    api: {
+      secret: API_SECRET_KEY || 'dummy-api-secret',
+    },
     argon: {
       admin: {
         pepper: ADMIN_ARGON2_PEPPER || 'dummy-admin-pepper',

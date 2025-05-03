@@ -193,7 +193,6 @@ class AuthenticationService extends BaseService {
   ): Promise<{ accessToken: string; refreshToken: string }> =>
     this.handleErrors(async () => {
       const INVALID_CREDENTIALS_MSG = 'Invalid username or password.';
-      const REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
       const user = await userRepository.read({ email });
 
@@ -240,12 +239,6 @@ class AuthenticationService extends BaseService {
         jwtUtil.generate({ id: user.id, role: user.role, type: 'refresh' }),
       ]);
 
-      await cacheUtil.set(
-        `refresh_token:${user.id}`,
-        refreshToken,
-        REFRESH_TOKEN_TTL_SECONDS,
-      );
-
       return { accessToken, refreshToken };
     }, this.login.name);
 
@@ -286,14 +279,6 @@ class AuthenticationService extends BaseService {
           },
         });
       }
-
-      const refreshTokenKey = `refresh_token:${userId}`;
-      const userKey = `${updatedUser.role}:${userId}`;
-
-      await Promise.all([
-        cacheUtil.delete(userKey),
-        cacheUtil.delete(refreshTokenKey),
-      ]);
 
       return {
         message:
@@ -403,23 +388,6 @@ class AuthenticationService extends BaseService {
         });
       }
 
-      const refreshTokenKey = `refresh_token:${userId}`;
-      const cachedRefreshToken = await cacheUtil.get(refreshTokenKey);
-
-      if (cachedRefreshToken !== refreshToken) {
-        await cacheUtil.delete(refreshTokenKey);
-        throw new ServiceError(StatusCodes.UNAUTHORIZED, {
-          message: 'Invalid session detected. Please log in again.',
-          trace: {
-            method: this.refreshToken.name,
-            context: {
-              userId,
-              error: 'Refresh token mismatch - possible token reuse',
-            },
-          },
-        });
-      }
-
       await jwtUtil.verify({
         role: user.role,
         token: refreshToken,
@@ -438,8 +406,6 @@ class AuthenticationService extends BaseService {
           type: 'refresh',
         }),
       ]);
-
-      await cacheUtil.set(refreshTokenKey, newRefreshToken, 60 * 60 * 24 * 7);
 
       return {
         accessToken: newAccessToken,

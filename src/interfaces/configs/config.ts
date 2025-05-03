@@ -6,6 +6,9 @@ export interface IConfig {
    * Authentication configuration settings.
    */
   authentication: {
+    api: {
+      secret: string;
+    };
     argon: {
       admin: {
         pepper: string;
