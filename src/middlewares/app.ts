@@ -39,21 +39,7 @@ export const configureMiddlewares = (app: Application): void => {
   app.set('views', path.join(__dirname, '../../src/views'));
 
   app.use(cookieParser());
-  app.use(
-    helmet({
-      contentSecurityPolicy:
-        process.env.NODE_ENV === 'production'
-          ? {
-              directives: {
-                defaultSrc: ["'self'"],
-                scriptSrc: ["'self'", "'unsafe-inline'"],
-                styleSrc: ["'self'", "'unsafe-inline'"],
-                imgSrc: ["'self'", 'data:'],
-              },
-            }
-          : false,
-    }),
-  );
+  app.use(helmet());
 
   const allowedOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',')
