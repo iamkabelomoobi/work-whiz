@@ -96,7 +96,7 @@ export class JobRoutes {
          */
         .post(
           '',
-          authorizationMiddleware.authorizeEmployer,
+          authorizationMiddleware.isAuthorized(['employer']),
           jobController.createJob,
         )
         /**
@@ -211,7 +211,7 @@ export class JobRoutes {
          */
         .patch(
           '/job/:jobId',
-          authorizationMiddleware.authorizeEmployer,
+          authorizationMiddleware.isAuthorized(['employer']),
           jobController.updateJob,
         )
         /**
@@ -239,7 +239,7 @@ export class JobRoutes {
          */
         .delete(
           '/job/:jobId',
-          authorizationMiddleware.authorizeEmployer,
+          authorizationMiddleware.isAuthorized(['employer', 'admin']),
           jobController.deleteJob,
         )
     );

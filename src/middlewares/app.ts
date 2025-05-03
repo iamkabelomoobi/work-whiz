@@ -21,8 +21,9 @@ import {
   JobRoutes,
 } from '@work-whiz/routes';
 import { authenticationQueue } from '@work-whiz/queues';
-import { authenticationMiddleware } from './authentication.middleware';
+import { authenticationMiddleware } from './';
 import rateLimit from 'express-rate-limit';
+import { globalErrorHandler } from './global-error.middleware';
 
 export const configureMiddlewares = (app: Application): void => {
   const serverAdapter = new ExpressAdapter();
@@ -34,19 +35,23 @@ export const configureMiddlewares = (app: Application): void => {
   });
 
   app.set('trust proxy', 1);
-  app.use(cookieParser());
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, '../../src/views'));
+
+  app.use(cookieParser());
   app.use(
     helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:'],
-        },
-      },
+      contentSecurityPolicy:
+        process.env.NODE_ENV === 'production'
+          ? {
+              directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "'unsafe-inline'"],
+                styleSrc: ["'self'", "'unsafe-inline'"],
+                imgSrc: ["'self'", 'data:'],
+              },
+            }
+          : false,
     }),
   );
 
@@ -60,7 +65,7 @@ export const configureMiddlewares = (app: Application): void => {
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
-          callback(new Error('Not allowed by CORS'));
+          callback(null, false);
         }
       },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
@@ -70,12 +75,14 @@ export const configureMiddlewares = (app: Application): void => {
     }),
   );
 
-  app.use(cookieParser());
   app.use(lusca.csrf());
-
-  app.use(express.json({ limit: '10kb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-
+  app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '10kb' }));
+  app.use(
+    express.urlencoded({
+      extended: true,
+      limit: process.env.JSON_BODY_LIMIT || '10kb',
+    }),
+  );
   app.use(compression());
 
   if (process.env.NODE_ENV === 'development') {
@@ -102,15 +109,17 @@ export const configureMiddlewares = (app: Application): void => {
   // Rate limiter middleware
   if (process.env.NODE_ENV === 'production') {
     const limiter = rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: 100,
+      windowMs: parseInt(process.env.RATE_LIMIT_WINDOW || '900000', 10), // 15 minutes
+      max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
       message: 'Too many requests, please try again later.',
       standardHeaders: true,
       legacyHeaders: false,
     });
     app.use(limiter);
-    app.use(authenticationMiddleware.isAuthenticated);
   }
+
+  // Authentication middleware
+  app.use(authenticationMiddleware.isAuthenticated);
 
   // API Routes
   const API_VERSION = 'v1';
@@ -119,4 +128,12 @@ export const configureMiddlewares = (app: Application): void => {
   app.use(`/api/${API_VERSION}/candidates`, new CandidateRoutes().init());
   app.use(`/api/${API_VERSION}/employers`, new EmployerRoutes().init());
   app.use(`/api/${API_VERSION}/jobs`, new JobRoutes().init());
+
+  // Global Error Handler
+  app.use(globalErrorHandler);
+
+  // Health Check Endpoint
+  app.get('/healthcheck', (req, res) =>
+    res.status(200).json({ status: 'healthy' }),
+  );
 };

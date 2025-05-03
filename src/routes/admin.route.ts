@@ -33,7 +33,7 @@ export class AdminRoutes {
     this.router.get(
       '/me',
       profileLimiter,
-      authorizationMiddleware.isAuthorized,
+      authorizationMiddleware.isAuthorized(['admin']),
       adminController.getAdmin,
     );
 
@@ -62,7 +62,7 @@ export class AdminRoutes {
     this.router.patch(
       '/me',
       profileLimiter,
-      authorizationMiddleware.isAuthorized,
+      authorizationMiddleware.isAuthorized(['admin']),
       adminController.updateAdmin,
     );
 
@@ -99,7 +99,7 @@ export class AdminRoutes {
     this.router.get(
       '/',
       profileLimiter,
-      authorizationMiddleware.isAuthorized,
+      authorizationMiddleware.isAuthorized(['admin']),
       adminController.getAllAdmins,
     );
 
@@ -136,8 +136,65 @@ export class AdminRoutes {
     this.router.patch(
       '/me/contact',
       profileLimiter,
-      authorizationMiddleware.isAuthorized,
+      authorizationMiddleware.isAuthorized(['admin']),
       userController.updateContact,
+    );
+
+    /**
+     * @swagger
+     * /api/admins/me/password:
+     *   patch:
+     *     summary: Update admin password
+     *     tags: [Admin]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               currentPassword:
+     *                 type: string
+     *                 example: "currentpassword123"
+     *               newPassword:
+     *                 type: string
+     *                 example: "newpassword123"
+     *     responses:
+     *       200:
+     *         description: Password updated successfully
+     *       400:
+     *         description: Validation error
+     *       401:
+     *         description: Unauthorized
+     */
+    this.router.patch(
+      '/me/password',
+      profileLimiter,
+      authorizationMiddleware.isAuthorized(['admin']),
+      userController.updatePassword,
+    );
+
+    /**
+     * @swagger
+     * /api/admins/me:
+     *   delete:
+     *     summary: Delete current admin account
+     *     tags: [Admin]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Account deleted successfully
+     *       401:
+     *         description: Unauthorized
+     */
+    this.router.delete(
+      '/me',
+      profileLimiter,
+      authorizationMiddleware.isAuthorized(['admin']),
+      userController.deleteAccount,
     );
 
     return this.router;
