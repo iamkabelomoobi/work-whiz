@@ -3,6 +3,7 @@ import { DataTypes, Model, Association } from 'sequelize';
 import { sequelize } from '@work-whiz/libs';
 import { EmployerModel } from './employer.model';
 import { IJob, IModelDictionary } from '@work-whiz/interfaces';
+import { ApplicationModel } from './application.model';
 
 class JobModel extends Model<IJob> implements IJob {
   public id!: string;
@@ -24,6 +25,7 @@ class JobModel extends Model<IJob> implements IJob {
 
   public static associations: {
     employer: Association<JobModel, EmployerModel>;
+    applications: Association<JobModel, ApplicationModel>;
   };
 
   public static associate(models: IModelDictionary) {
@@ -33,6 +35,17 @@ class JobModel extends Model<IJob> implements IJob {
         allowNull: false,
       },
       as: 'employer',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
+      hooks: true,
+      constraints: true,
+    });
+    JobModel.hasMany(models.ApplicationModel, {
+      foreignKey: {
+        name: 'jobId',
+        allowNull: false,
+      },
+      as: 'applications',
       onDelete: 'CASCADE',
       onUpdate: 'CASCADE',
       hooks: true,
