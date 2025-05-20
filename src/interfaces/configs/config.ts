@@ -56,8 +56,12 @@ export interface IConfig {
       host: string;
     };
     redis: {
-      /** The URI for connecting to the Redis instance */
-      uri: string;
+      /** The host address of the Redis instance */
+      host: string;
+      /** The port number of the Redis instance */
+      port: number;
+      /** The password for accessing the Redis instance */
+      password: string;
     };
   };
   /**
