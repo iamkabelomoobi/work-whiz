@@ -6,7 +6,6 @@ import morgan from 'morgan';
 import fs from 'fs';
 import path from 'path';
 import cookieParser from 'cookie-parser';
-import lusca from 'lusca';
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
@@ -23,7 +22,6 @@ import {
 import { authenticationQueue } from '@work-whiz/queues';
 import { authenticationMiddleware } from './';
 import rateLimit from 'express-rate-limit';
-import { globalErrorHandler } from './global-error.middleware';
 
 export const configureMiddlewares = (app: Application): void => {
   const serverAdapter = new ExpressAdapter();
@@ -61,7 +59,6 @@ export const configureMiddlewares = (app: Application): void => {
     }),
   );
 
-  app.use(lusca.csrf());
   app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '10kb' }));
   app.use(
     express.urlencoded({
@@ -114,12 +111,4 @@ export const configureMiddlewares = (app: Application): void => {
   app.use(`/api/${API_VERSION}/candidates`, new CandidateRoutes().init());
   app.use(`/api/${API_VERSION}/employers`, new EmployerRoutes().init());
   app.use(`/api/${API_VERSION}/jobs`, new JobRoutes().init());
-
-  // Global Error Handler
-  app.use(globalErrorHandler);
-
-  // Health Check Endpoint
-  app.get('/healthcheck', (req, res) =>
-    res.status(200).json({ status: 'healthy' }),
-  );
 };
