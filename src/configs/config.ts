@@ -30,7 +30,9 @@ const {
   POSTGRES_USERNAME,
 
   // Redis Configuration
-  REDIS_URL,
+  REDIS_HOST,
+  REDIS_PORT,
+  REDIS_PASSWORD,
 
   // Logging
   LOGTAIL_ACCESS_TOKEN,
@@ -57,78 +59,76 @@ const {
 export const config: IConfig = {
   authentication: {
     api: {
-      secret: API_SECRET_KEY || 'dummy-api-secret',
+      secret: API_SECRET_KEY,
     },
     argon: {
       admin: {
-        pepper: ADMIN_ARGON2_PEPPER || 'dummy-admin-pepper',
+        pepper: ADMIN_ARGON2_PEPPER,
       },
       employer: {
-        pepper: EMPLOYER_ARGON2_PEPPER || 'dummy-employer-pepper',
+        pepper: EMPLOYER_ARGON2_PEPPER,
       },
       candidate: {
-        pepper: CANDIDATE_ARGON2_PEPPER || 'dummy-candidate-pepper',
+        pepper: CANDIDATE_ARGON2_PEPPER,
       },
     },
     jwt: {
       admin: {
-        access: ADMIN_ACCESS_KEY || 'dummy-admin-access-key',
-        refresh: ADMIN_REFRESH_ACCESS_KEY || 'dummy-admin-refresh-key',
-        password_setup: ADMIN_PASSWORD_SETUP || 'dummy-admin-password-setup',
-        password_reset: ADMIN_PASSWORD_RESET || 'dummy-admin-password-reset',
+        access: ADMIN_ACCESS_KEY,
+        refresh: ADMIN_REFRESH_ACCESS_KEY,
+        password_setup: ADMIN_PASSWORD_SETUP,
+        password_reset: ADMIN_PASSWORD_RESET,
       },
       employer: {
-        access: EMPLOYER_ACCESS_KEY || 'dummy-employer-access-key',
-        refresh: EMPLOYER_REFRESH_ACCESS_KEY || 'dummy-employer-refresh-key',
-        password_setup:
-          EMPLOYER_PASSWORD_SETUP || 'dummy-employer-password-setup',
-        password_reset:
-          EMPLOYER_PASSWORD_RESET || 'dummy-employer-password-reset',
+        access: EMPLOYER_ACCESS_KEY,
+        refresh: EMPLOYER_REFRESH_ACCESS_KEY,
+        password_setup: EMPLOYER_PASSWORD_SETUP,
+        password_reset: EMPLOYER_PASSWORD_RESET,
       },
       candidate: {
-        access: CANDIDATE_ACCESS_KEY || 'dummy-candidate-access-key',
-        refresh: CANDIDATE_REFRESH_ACCESS_KEY || 'dummy-candidate-refresh-key',
-        password_setup:
-          CANDIDATE_PASSWORD_SETUP || 'dummy-candidate-password-setup',
-        password_reset:
-          CANDIDATE_PASSWORD_RESET || 'dummy-candidate-password-reset',
+        access: CANDIDATE_ACCESS_KEY,
+        refresh: CANDIDATE_REFRESH_ACCESS_KEY,
+        password_setup: CANDIDATE_PASSWORD_SETUP,
+        password_reset: CANDIDATE_PASSWORD_RESET,
       },
     },
   },
   database: {
     postgres: {
-      databaseName: POSTGRES_DATABASE_NAME || 'dummy-database-name',
-      username: POSTGRES_USERNAME || 'dummy-username',
-      password: POSTGRES_PASSWORD || 'dummy-password',
-      host: POSTGRES_HOST || 'dummy-host',
+      databaseName: POSTGRES_DATABASE_NAME,
+      username: POSTGRES_USERNAME,
+      password: POSTGRES_PASSWORD,
+      host: POSTGRES_HOST,
     },
     redis: {
-      uri: REDIS_URL || 'dummy-redis-url',
+      host: REDIS_HOST,
+      port: REDIS_PORT ? parseInt(REDIS_PORT) : undefined,
+      password: REDIS_PASSWORD,
     },
   },
   logger: {
     logtail: {
-      accessToken: LOGTAIL_ACCESS_TOKEN || 'dummy-logtail-access-token',
+      accessToken: LOGTAIL_ACCESS_TOKEN,
     },
   },
   notification: {
     mailgen: {
-      theme: MAILGEN_PRODUCT_THEME || 'default',
+      theme: MAILGEN_PRODUCT_THEME,
       product: {
-        name: MAILGEN_PRODUCT_NAME || 'Dummy Product',
-        link: MAILGEN_PRODUCT_LINK || 'https://dummy-link.com',
-        logo: MAILGEN_PRODUCT_LOGO || 'https://dummy-logo.com/logo.png',
-        copyright: MAILGEN_PRODUCT_COPYRIGHT || '© Dummy Copyright',
+        name: MAILGEN_PRODUCT_NAME,
+        link: MAILGEN_PRODUCT_LINK,
+        logo: MAILGEN_PRODUCT_LOGO,
+        copyright: MAILGEN_PRODUCT_COPYRIGHT,
       },
     },
     nodemailer: {
-      service: NODEMAILER_SERVICE || 'dummy-service',
-      host: NODEMAILER_HOST || 'dummy-host',
-      port: parseInt(NODEMAILER_PORT) || 994,
+      service: NODEMAILER_SERVICE,
+      host: NODEMAILER_HOST,
+      port: NODEMAILER_PORT ? parseInt(NODEMAILER_PORT) : undefined,
       secure: true,
       auth: {
-        user: NODEMAILER_USERNAME || 'dummy-username',
-        pass: NODEMAILER_PASSWORD || 'dummy-password',
+        user: NODEMAILER_USERNAME,
+        pass: NODEMAILER_PASSWORD,
       },
     },
   },
