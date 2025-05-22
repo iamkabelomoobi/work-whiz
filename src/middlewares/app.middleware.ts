@@ -14,13 +14,14 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '@work-whiz/configs/swagger';
 import {
   AdminRoutes,
+  ApplicationRoutes,
   AuthenticationRoutes,
   CandidateRoutes,
   EmployerRoutes,
   JobRoutes,
 } from '@work-whiz/routes';
-import { authenticationQueue } from '@work-whiz/queues';
-import { authenticationMiddleware } from './';
+import { authenticationQueue, applicationQueue } from '@work-whiz/queues';
+import { authenticationMiddleware } from '.';
 import rateLimit from 'express-rate-limit';
 
 export const configureMiddlewares = (app: Application): void => {
@@ -28,7 +29,10 @@ export const configureMiddlewares = (app: Application): void => {
   serverAdapter.setBasePath('/admin/queues');
 
   createBullBoard({
-    queues: [new BullAdapter(authenticationQueue)],
+    queues: [
+      new BullAdapter(authenticationQueue),
+      new BullAdapter(applicationQueue),
+    ],
     serverAdapter,
   });
 
@@ -111,4 +115,5 @@ export const configureMiddlewares = (app: Application): void => {
   app.use(`/api/${API_VERSION}/candidates`, new CandidateRoutes().init());
   app.use(`/api/${API_VERSION}/employers`, new EmployerRoutes().init());
   app.use(`/api/${API_VERSION}/jobs`, new JobRoutes().init());
+  app.use(`/api/${API_VERSION}/applications`, new ApplicationRoutes().init());
 };

@@ -1,4 +1,4 @@
-export { configureMiddlewares } from './app';
+export { configureMiddlewares } from './app.middleware';
 
 export { authenticationMiddleware } from './authentication.middleware';
 
