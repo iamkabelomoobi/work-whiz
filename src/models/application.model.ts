@@ -8,7 +8,7 @@ class ApplicationModel extends Model<IApplication> implements IApplication {
   public id!: string;
   public jobId!: string;
   public candidateId!: string;
-  public status!: 'pending' | 'accepted' | 'rejected';
+  public status!: 'pending' | 'updated' | 'rejected';
   public coverLetter?: string;
   public resumeUrl?: string;
   public readonly createdAt!: Date;
@@ -78,6 +78,19 @@ ApplicationModel.init(
     sequelize,
     modelName: 'Application',
     timestamps: true,
+    indexes: [
+      {
+        name: 'application_search_index',
+        fields: [
+          'id',
+          'jobId',
+          'candidateId',
+          'status',
+          'createdAt',
+          'updatedAt',
+        ],
+      },
+    ],
   },
 );
 
