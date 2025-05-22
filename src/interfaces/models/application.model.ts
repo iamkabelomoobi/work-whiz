@@ -1,3 +1,4 @@
+import { ICandidate } from './candidate.model';
 import { IJob } from './job.model';
 
 interface IApplication {
@@ -5,7 +6,8 @@ interface IApplication {
   jobId?: string;
   job?: Partial<IJob>;
   candidateId?: string;
-  status?: 'pending' | 'accepted' | 'rejected';
+  candidate?: Partial<ICandidate>;
+  status?: 'pending' | 'updated' | 'rejected';
   coverLetter?: string;
   resumeUrl?: string;
   createdAt?: Date;

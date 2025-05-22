@@ -1,5 +1,7 @@
 export { IAdminQuery } from './admin.query';
 
+export { IApplicationQuery, IPaginatedApplications } from './application.query';
+
 export { IEmployerQuery } from './employer.query';
 
 export { ICandidateQuery } from './candidate.query';
