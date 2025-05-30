@@ -1,3 +1,5 @@
+/* This TypeScript code snippet is defining an application configuration object named `config` that
+contains various settings and values for different parts of the application. */
 import { IConfig } from '@work-whiz/interfaces';
 
 const {
