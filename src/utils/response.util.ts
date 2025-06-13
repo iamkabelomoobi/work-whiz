@@ -85,12 +85,11 @@ class ResponseUtil {
       /token/i,
       /key/i,
     ];
+    let sanitized = message;
     for (const pattern of sensitivePatterns) {
-      if (pattern.test(message)) {
-        return message;
-      }
+      sanitized = sanitized.replace(pattern, '[REDACTED]');
     }
-    return message;
+    return sanitized;
   }
 
   private sanitizeDetails(

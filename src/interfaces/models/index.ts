@@ -1,5 +1,7 @@
 export { IAdmin } from './admin.model';
 
+export { IApplication } from './application.model';
+
 export { IEmployer } from './employer.model';
 
 export { ICandidate } from './candidate.model';

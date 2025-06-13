@@ -1,5 +1,7 @@
 export { cacheUtil } from './cache.utils';
 
+export { createFrontendUrl } from './frontend.util';
+
 export { getUserRole } from './getUserRole.util';
 
 export { jwtUtil } from './jwt.util';
