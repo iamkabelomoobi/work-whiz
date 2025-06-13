@@ -65,6 +65,14 @@ export interface IConfig {
     };
   };
   /**
+   * Frontend configuration settings.
+   */
+  frontend: {
+    admin: string;
+    candidate: string;
+    employer: string;
+  };
+  /**
    * Logger configuration settings.
    */
   logger: {

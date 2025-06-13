@@ -52,6 +52,11 @@ const {
   MAILGEN_PRODUCT_LOGO,
   MAILGEN_PRODUCT_NAME,
   MAILGEN_PRODUCT_THEME,
+
+  // Frontend URLs
+  ADMIN_FRONTEND,
+  CANDIDATE_FRONTEND,
+  EMPLOYER_FRONTEND,
 } = process.env;
 
 /**
@@ -104,9 +109,14 @@ export const config: IConfig = {
     },
     redis: {
       host: REDIS_HOST,
-      port: REDIS_PORT ? parseInt(REDIS_PORT) : undefined,
+      port: REDIS_PORT ? parseInt(REDIS_PORT, 10) : 6379,
       password: REDIS_PASSWORD,
     },
+  },
+  frontend: {
+    admin: ADMIN_FRONTEND,
+    candidate: CANDIDATE_FRONTEND,
+    employer: EMPLOYER_FRONTEND,
   },
   logger: {
     logtail: {

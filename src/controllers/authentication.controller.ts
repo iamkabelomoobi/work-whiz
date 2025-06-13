@@ -14,6 +14,7 @@ import {
   candidateRegisterValidator,
   employerRegisterValidator,
 } from '@work-whiz/validators';
+import { Role } from '@work-whiz/types';
 
 const SESSION_EXPIRED_MESSAGE = 'Session has expired';
 
@@ -73,7 +74,8 @@ export class AuthenticationController {
 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
-      const role = getUserRole(req);
+      // const role = getUserRole(req);
+      const role = req.query.role as Role
 
       const registerData = req.body as
         | IAdminRegister
@@ -125,7 +127,6 @@ export class AuthenticationController {
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password } = req.body;
-      console.log(req.body);
       if (!email || !password) {
         responseUtil.sendError(res, {
           message: 'Email and password are required',

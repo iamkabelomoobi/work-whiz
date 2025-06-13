@@ -106,14 +106,13 @@ export const configureMiddlewares = (app: Application): void => {
   }
 
   // Authentication middleware
-  app.use(authenticationMiddleware.isAuthenticated);
+  // app.use(authenticationMiddleware.isAuthenticated);
 
   // API Routes
-  const API_VERSION = 'v1';
-  app.use(`/api/${API_VERSION}/auth`, new AuthenticationRoutes().init());
-  app.use(`/api/${API_VERSION}/admins`, new AdminRoutes().init());
-  app.use(`/api/${API_VERSION}/candidates`, new CandidateRoutes().init());
-  app.use(`/api/${API_VERSION}/employers`, new EmployerRoutes().init());
-  app.use(`/api/${API_VERSION}/jobs`, new JobRoutes().init());
-  app.use(`/api/${API_VERSION}/applications`, new ApplicationRoutes().init());
+  app.use(`/api/auth`, new AuthenticationRoutes().init());
+  app.use(`/api/admins`, new AdminRoutes().init());
+  app.use(`/api/candidates`, new CandidateRoutes().init());
+  app.use(`/api/employers`, new EmployerRoutes().init());
+  app.use(`/api/jobs`, new JobRoutes().init());
+  app.use(`/api/applications`, new ApplicationRoutes().init());
 };
