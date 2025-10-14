@@ -38,7 +38,7 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "lusca": "^1.7.0",
-    "mailgen": "^2.0.29",
+    "mailgen": "^2.0.31",
     "morgan": "^1.10.0",
     "nodemailer": "^6.10.0",
     "pg": "^8.14.1",
