@@ -98,8 +98,8 @@ class ApplicationService extends BaseService implements IApplicationService {
         status: newApplication.status,
         jobTitle: newApplication.job?.title,
         candidate: {
-          firstName: newApplication.candidate?.firstName,
-          email: newApplication.candidate?.user?.email,
+          firstName: candidate?.firstName,
+          email: candidate?.user?.email,
         },
       };
       await applicationQueue.add('application_created', queuePayload);

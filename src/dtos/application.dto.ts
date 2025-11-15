@@ -9,7 +9,7 @@ export const toApplicationDTO = (application: IApplication): IApplication => {
     status: application.status,
     coverLetter: application.coverLetter,
     resumeUrl: application.resumeUrl,
-    createdAt: application.createdAt || new Date(),
-    updatedAt: application.updatedAt || new Date(),
+    createdAt: application.createdAt,
+    updatedAt: application.updatedAt,
   };
 };

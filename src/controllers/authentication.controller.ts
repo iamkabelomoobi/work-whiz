@@ -74,8 +74,7 @@ export class AuthenticationController {
 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
-      // const role = getUserRole(req);
-      const role = req.query.role as Role
+      const role = getUserRole(req);
 
       const registerData = req.body as
         | IAdminRegister

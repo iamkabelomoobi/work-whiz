@@ -24,7 +24,7 @@ class AuthorizationMiddleware {
     tokenType: 'password_setup' | 'password_reset',
   ): Promise<void> => {
     try {
-      const role = 'candidate' //getUserRole(req);
+      const role = getUserRole(req);
       const { password, token } = req.body;
 
       if (!password || !token) {
