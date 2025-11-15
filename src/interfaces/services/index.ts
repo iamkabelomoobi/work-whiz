@@ -1,5 +1,7 @@
 export { IAdminService } from './admin';
 
+export { IApplicationService } from './application.service';
+
 export {
   IAdminRegister,
   ICandidateRegister,

@@ -30,7 +30,7 @@ export default class NotificationUtil {
   ): Promise<void> => {
     try {
       const mail_options = {
-        from: `HireVerse <${config.notification.nodemailer.auth.user}>`,
+        from: `WorkWhiz <${config.notification.nodemailer.auth.user}>`,
         to: receiver,
         subject: subject,
         html: html_template,
@@ -45,7 +45,7 @@ export default class NotificationUtil {
                 `Error sending email to ${receiver} with subject "${subject}":`,
                 error,
               );
-              reject(new Error(`Failed to send email: ${error.message}`));
+              reject(error);
             } else {
               logger.info(
                 `Email sent to ${receiver} with subject "${subject}"`,
@@ -56,7 +56,7 @@ export default class NotificationUtil {
       });
     } catch (error) {
       logger.error(`Error in sendEmail method:`, error);
-      throw new Error('Failed to send email');
+      throw error;
     }
   };
 }

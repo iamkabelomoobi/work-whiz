@@ -48,7 +48,11 @@ class DatabaseLib {
    * @public
    */
   public redisClient(): Redis {
-    return new Redis(config?.database?.redis?.uri);
+    return new Redis({
+      host: config?.database?.redis?.host,
+      port: config?.database?.redis?.port,
+      password: config?.database?.redis?.password,
+    });
   }
 }
 

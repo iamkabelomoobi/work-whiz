@@ -1,5 +1,7 @@
 export { AdminModel } from './admin.model';
 
+export { ApplicationModel } from './application.model';
+
 export { models, associateModels } from './associate';
 
 export { CandidateModel } from './candidate.model';

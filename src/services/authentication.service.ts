@@ -5,6 +5,7 @@ import {
   jwtUtil,
   passwordUtil,
   cacheUtil,
+  createFrontendUrl,
 } from '@work-whiz/utils';
 import {
   adminRepository,
@@ -23,8 +24,6 @@ import {
   IEmployerRegister,
 } from '@work-whiz/interfaces';
 import { authenticationQueue } from '@work-whiz/queues';
-
-const { ADMIN_FRONTEND, CANDIDATE_FRONTEND, EMPLOYER_FRONTEND } = process.env;
 
 const AuthenticationErrorMessages = {
   login: 'Invalid username or password..',
@@ -76,19 +75,6 @@ class AuthenticationService extends BaseService {
             },
           },
         });
-    }
-  };
-
-  private readonly createFrontendUrl = (role: Role): string => {
-    switch (role) {
-      case 'admin':
-        return ADMIN_FRONTEND;
-      case 'candidate':
-        return CANDIDATE_FRONTEND;
-      case 'employer':
-        return EMPLOYER_FRONTEND;
-      default:
-        throw new Error(`Invalid user role: ${role}`);
     }
   };
 
@@ -155,8 +141,14 @@ class AuthenticationService extends BaseService {
         PASSWORD_SETUP_EXPIRATION,
       );
 
+      console.log(
+        `User role: ${newUser.role}, ID: ${newUser.id}, Password setup token cached with key: ${cacheKey}`,
+      );
+      const frontendUrl = createFrontendUrl(newUser.role);
+
+      console.log(`Frontend URL for role ${newUser.role}: ${frontendUrl}`);
       const setupUrl = new URL(
-        `${this.createFrontendUrl(role)}/auth/password/setup`,
+        `${frontendUrl.replace(/\/+$/, '')}/auth/password/setup`,
       );
       setupUrl.searchParams.set('token', passwordSetupToken);
 
@@ -468,7 +460,7 @@ class AuthenticationService extends BaseService {
       const cacheKey = `password_reset:${user.id}`;
       await cacheUtil.set(cacheKey, passwordResetToken, 30 * 60);
 
-      const frontEndUrl = this.createFrontendUrl(user.role);
+      const frontEndUrl = createFrontendUrl(user.role);
       const resetUrl = new URL(`${frontEndUrl}/auth/password/reset`);
       resetUrl.searchParams.set('token', passwordResetToken);
 

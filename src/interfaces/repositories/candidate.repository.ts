@@ -1,3 +1,4 @@
+import { Transaction } from 'sequelize';
 import {
   ICandidate,
   ICandidateQuery,
@@ -15,6 +16,14 @@ export interface ICandidateRepository {
    * @returns A Promise that resolves to a candidate or null if not found.
    */
   read(query: ICandidateQuery): Promise<ICandidate | null>;
+
+  /**
+   * Creates a new candidate with the provided data.
+   *
+   * @param candidate - The candidate data to be created.
+   * @returns A Promise that resolves to the created candidate.
+   */
+  create(candidate: ICandidate): Promise<ICandidate>;
 
   /**
    * Retrieves multiple candidates with optional pagination support.
@@ -42,4 +51,6 @@ export interface ICandidateRepository {
    * @returns A Promise that resolves to the updated candidate or null if not found.
    */
   update(userId: string, data: Partial<ICandidate>): Promise<ICandidate | null>;
+
+  withTransaction(t: Transaction): ICandidateRepository;
 }

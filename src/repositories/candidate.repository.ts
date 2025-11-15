@@ -92,6 +92,17 @@ class CandidateRepository implements ICandidateRepository {
   }
 
   /**
+   * Returns a new repository instance bound to the given transaction.
+   * @param {Transaction} t - The Sequelize transaction to use
+   * @returns {ICandidateRepository} Repository instance using the transaction
+   */
+  public withTransaction(t: Transaction): ICandidateRepository {
+    const repo = new CandidateRepository();
+    repo.transaction = t;
+    return repo;
+  }
+
+  /**
    * Gets singleton repository instance
    * @static
    * @returns {CandidateRepository} The repository instance

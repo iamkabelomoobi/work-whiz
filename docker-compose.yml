@@ -1,54 +1,41 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  app1:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: work-whiz-app
-    container_name: work-whiz-app
+  mailhog:
+    image: mailhog/mailhog
+    container_name: work-whiz-mailhog
     restart: unless-stopped
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: postgres://postgres:postgres@db:5432/workwhiz
-      REDIS_URL: redis://redis:6379
-      NODEMAILER_HOST: maildev
-      NODEMAILER_PORT: 1025
-      NODEMAILER_SECURE: false
+    env_file:
+      - .env
     ports:
-      - '8080:8080' # Changed to standard port 8080
-    depends_on:
-      - db
-      - redis
-      - maildev
-
-  db:
-    image: postgres:16-alpine
-    container_name: work-whiz-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: workwhiz
-    ports:
-      - '5433:5432'
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
 
   redis:
     image: redis:7-alpine
     container_name: work-whiz-redis
     restart: unless-stopped
     ports:
-      - '6380:6379'
+      - "6379:6379"
+    depends_on:
+      - mailhog
 
-  maildev:
-    image: maildev/maildev
-    container_name: work-whiz-maildev
-    restart: unless-stopped
+  db:
+    image: postgres:13
+    container_name: work-whiz-db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE_NAME}
     ports:
-      - '1080:1080' # Web interface
-      - '1025:1025' # SMTP port
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    depends_on:
+      - redis
 
 volumes:
-  pgdata:
+  db_data:

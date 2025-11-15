@@ -1,5 +1,7 @@
 export { adminService } from './admin.service';
 
+export { applicationService } from './application.service';
+
 export { authenticationService } from './authentication.service';
 
 export { BaseService } from './base.service';

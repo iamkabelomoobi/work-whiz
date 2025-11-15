@@ -1,5 +1,6 @@
 import {
   AdminModel,
+  ApplicationModel,
   CandidateModel,
   EmployerModel,
   JobModel,
@@ -8,6 +9,7 @@ import {
 
 export interface IModelDictionary {
   AdminModel: typeof AdminModel;
+  ApplicationModel: typeof ApplicationModel;
   CandidateModel: typeof CandidateModel;
   EmployerModel: typeof EmployerModel;
   JobModel: typeof JobModel;

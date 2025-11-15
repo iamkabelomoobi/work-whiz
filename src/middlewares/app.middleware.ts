@@ -6,7 +6,6 @@ import morgan from 'morgan';
 import fs from 'fs';
 import path from 'path';
 import cookieParser from 'cookie-parser';
-import lusca from 'lusca';
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
@@ -15,22 +14,25 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '@work-whiz/configs/swagger';
 import {
   AdminRoutes,
+  ApplicationRoutes,
   AuthenticationRoutes,
   CandidateRoutes,
   EmployerRoutes,
   JobRoutes,
 } from '@work-whiz/routes';
-import { authenticationQueue } from '@work-whiz/queues';
-import { authenticationMiddleware } from './';
+import { authenticationQueue, applicationQueue } from '@work-whiz/queues';
+import { authenticationMiddleware } from '.';
 import rateLimit from 'express-rate-limit';
-import { globalErrorHandler } from './global-error.middleware';
 
 export const configureMiddlewares = (app: Application): void => {
   const serverAdapter = new ExpressAdapter();
   serverAdapter.setBasePath('/admin/queues');
 
   createBullBoard({
-    queues: [new BullAdapter(authenticationQueue)],
+    queues: [
+      new BullAdapter(authenticationQueue),
+      new BullAdapter(applicationQueue),
+    ],
     serverAdapter,
   });
 
@@ -61,7 +63,6 @@ export const configureMiddlewares = (app: Application): void => {
     }),
   );
 
-  app.use(lusca.csrf());
   app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '10kb' }));
   app.use(
     express.urlencoded({
@@ -105,21 +106,13 @@ export const configureMiddlewares = (app: Application): void => {
   }
 
   // Authentication middleware
-  app.use(authenticationMiddleware.isAuthenticated);
+  // app.use(authenticationMiddleware.isAuthenticated);
 
   // API Routes
-  const API_VERSION = 'v1';
-  app.use(`/api/${API_VERSION}/auth`, new AuthenticationRoutes().init());
-  app.use(`/api/${API_VERSION}/admins`, new AdminRoutes().init());
-  app.use(`/api/${API_VERSION}/candidates`, new CandidateRoutes().init());
-  app.use(`/api/${API_VERSION}/employers`, new EmployerRoutes().init());
-  app.use(`/api/${API_VERSION}/jobs`, new JobRoutes().init());
-
-  // Global Error Handler
-  app.use(globalErrorHandler);
-
-  // Health Check Endpoint
-  app.get('/healthcheck', (req, res) =>
-    res.status(200).json({ status: 'healthy' }),
-  );
+  app.use(`/api/auth`, new AuthenticationRoutes().init());
+  app.use(`/api/admins`, new AdminRoutes().init());
+  app.use(`/api/candidates`, new CandidateRoutes().init());
+  app.use(`/api/employers`, new EmployerRoutes().init());
+  app.use(`/api/jobs`, new JobRoutes().init());
+  app.use(`/api/applications`, new ApplicationRoutes().init());
 };
