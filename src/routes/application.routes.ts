@@ -62,7 +62,11 @@ export class ApplicationRoutes {
          *       500:
          *         description: Server error
          */
-        .get('/:applicationId', applicationController.readApplication)
+        .get(
+          '/:applicationId',
+          authorizationMiddleware.isAuthorized(['candidate', 'employer']),
+          applicationController.readApplication,
+        )
         /**
          * @swagger
          * /api/applications:
@@ -132,7 +136,7 @@ export class ApplicationRoutes {
          */
         .patch(
           '/:applicationId',
-          authorizationMiddleware.isAuthorized(['candidate']),
+          authorizationMiddleware.isAuthorized(['candidate', 'employer']),
           applicationController.updateApplication,
         )
         /**

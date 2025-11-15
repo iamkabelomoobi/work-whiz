@@ -44,7 +44,7 @@ applicationQueue.process(async (job: Job<ApplicationJobPayload>) => {
 
     const html_template = await ejs.renderFile(
       path.join(TEMPLATES_PATH, templateInfo.template),
-      { id, status, jobTitle, candidate },
+      { application: { id, status, jobTitle, candidate } },
     );
 
     const recipient = candidate?.email;
