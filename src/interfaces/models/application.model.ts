@@ -7,7 +7,7 @@ interface IApplication {
   job?: Partial<IJob>;
   candidateId?: string;
   candidate?: Partial<ICandidate>;
-  status?: 'pending' | 'updated' | 'rejected';
+  status?: 'pending' | 'accepted' | 'rejected';
   coverLetter?: string;
   resumeUrl?: string;
   createdAt?: Date;

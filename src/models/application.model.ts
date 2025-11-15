@@ -8,7 +8,7 @@ class ApplicationModel extends Model<IApplication> implements IApplication {
   public id!: string;
   public jobId!: string;
   public candidateId!: string;
-  public status!: 'pending' | 'updated' | 'rejected';
+  public status!: 'pending' | 'accepted' | 'rejected';
   public coverLetter?: string;
   public resumeUrl?: string;
   public readonly createdAt!: Date;
