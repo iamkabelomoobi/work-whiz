@@ -11,7 +11,6 @@ export {
   logoutLimiter,
   forgotPasswordLimiter,
   resetPasswordLimiter,
-  setupPasswordLimiter,
 } from './rate-limiter.middleware';
 
 export { userAgentParser } from './user-agent.middleware';

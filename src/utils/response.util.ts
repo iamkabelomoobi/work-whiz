@@ -20,7 +20,6 @@ class ResponseUtil {
       status: 'success',
       statusCode,
       data,
-      message,
       timestamp: new Date().toISOString(),
     };
 
@@ -57,7 +56,7 @@ class ResponseUtil {
       statusCode: normalizedError.statusCode,
       error: {
         message: sanitizedMessage,
-        ...(normalizedError.code && { code: normalizedError.code }), // Only include if exists
+        ...(normalizedError.code && { code: normalizedError.code }),
       },
       ...(sanitizedDetails && { details: sanitizedDetails }),
       timestamp: new Date().toISOString(),

@@ -9,7 +9,6 @@ import {
   logoutLimiter,
   forgotPasswordLimiter,
   resetPasswordLimiter,
-  setupPasswordLimiter,
 } from '@work-whiz/middlewares';
 
 /**
@@ -140,31 +139,6 @@ export class AuthenticationRoutes {
 
         /**
          * @swagger
-         * /api/v1/auth/setup-password:
-         *   post:
-         *     summary: Setup password for a new account
-         *     tags: [Auth]
-         *     requestBody:
-         *       required: true
-         *       content:
-         *         application/json:
-         *           schema:
-         *             $ref: '#/components/schemas/PasswordRequest'
-         *     responses:
-         *       200:
-         *         description: Password setup successful
-         *       422:
-         *         description: Invalid password format
-         */
-        .post(
-          '/password/set',
-          setupPasswordLimiter,
-          authorizationMiddleware.authorizePasswordSetup,
-          authenticationController.setupPassword,
-        )
-
-        /**
-         * @swagger
          * /api/v1/auth/login:
          *   post:
          *     summary: Login with email and password
@@ -207,7 +181,6 @@ export class AuthenticationRoutes {
          *       403:
          *         description: Invalid CSRF token
          */
-
         .post(
           '/refresh-token',
           loginLimiter,
@@ -236,9 +209,9 @@ export class AuthenticationRoutes {
 
         /**
          * @swagger
-         * /api/v1/auth/password/recover:
+         * /api/v1/auth/forgot-password:
          *   post:
-         *     summary: Send a password reset link to user's email
+         *     summary: Send a password reset OTP to user's email
          *     tags: [Auth]
          *     requestBody:
          *       required: true
@@ -248,19 +221,60 @@ export class AuthenticationRoutes {
          *             $ref: '#/components/schemas/EmailRequest'
          *     responses:
          *       200:
-         *         description: Password reset email sent
+         *         description: Password reset OTP sent
          *       422:
          *         description: Invalid email format
          */
         .post(
-          '/password/recover',
+          '/forgot-password',
           forgotPasswordLimiter,
           authenticationController.forgotPassword,
         )
 
         /**
          * @swagger
-         * /api/v1/auth/password/change:
+         * /api/v1/auth/forgot-password/verify-otp:
+         *   post:
+         *     summary: Verify OTP and receive password reset token
+         *     tags: [Auth]
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               email:
+         *                 type: string
+         *               otp:
+         *                 type: string
+         *                 pattern: '^\d{6}$'
+         *     responses:
+         *       200:
+         *         description: OTP verified, reset token returned
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 token:
+         *                   type: string
+         *                 message:
+         *                   type: string
+         *       400:
+         *         description: Invalid or expired OTP
+         *       422:
+         *         description: Invalid email or OTP format
+         */
+        .post(
+          '/forgot-password/verify-otp',
+          resetPasswordLimiter,
+          authenticationController.verifyOtp,
+        )
+
+        /**
+         * @swagger
+         * /api/v1/auth/password-reset:
          *   patch:
          *     summary: Reset password using token
          *     tags: [Auth]
@@ -277,7 +291,7 @@ export class AuthenticationRoutes {
          *         description: Invalid password
          */
         .patch(
-          '/password/change',
+          '/password-reset',
           resetPasswordLimiter,
           authorizationMiddleware.authorizePasswordReset,
           userAgentParser,

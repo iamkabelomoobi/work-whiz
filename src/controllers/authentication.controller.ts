@@ -13,14 +13,23 @@ import {
   adminRegisterValidator,
   candidateRegisterValidator,
   employerRegisterValidator,
+  validateInput,
 } from '@work-whiz/validators';
 import { Role } from '@work-whiz/types';
 
 const SESSION_EXPIRED_MESSAGE = 'Session has expired';
 
+/**
+ * Controller handling all authentication-related operations.
+ * Implements singleton pattern to ensure a single instance throughout the application.
+ */
 export class AuthenticationController {
   private static instance: AuthenticationController;
 
+  /**
+   * Configuration for refresh token cookie.
+   * Secure, HTTP-only cookie with 7-day expiration.
+   */
   private readonly REFRESH_TOKEN_COOKIE = {
     httpOnly: true,
     secure: true,
@@ -29,6 +38,10 @@ export class AuthenticationController {
     path: '/auth/refresh-token',
   };
 
+  /**
+   * Configuration for access token cookie.
+   * Secure, HTTP-only cookie with 15-minute expiration.
+   */
   private readonly ACCESS_TOKEN_COOKIE = {
     httpOnly: true,
     secure: true,
@@ -43,6 +56,7 @@ export class AuthenticationController {
 
   /**
    * Singleton pattern for controller instantiation.
+   * @returns {AuthenticationController} The singleton instance of AuthenticationController
    */
   public static getInstance(): AuthenticationController {
     if (!AuthenticationController.instance) {
@@ -52,7 +66,11 @@ export class AuthenticationController {
   }
 
   /**
-   * Sets authentication cookies (refresh + CSRF token)
+   * Sets authentication cookies (refresh + access token) in the response.
+   * @param {Response} res - Express response object
+   * @param {string} refreshToken - JWT refresh token
+   * @param {string} accessToken - JWT access token
+   * @returns {void}
    */
   private setAuthCookies(
     res: Response,
@@ -65,16 +83,25 @@ export class AuthenticationController {
   }
 
   /**
-   * Clears authentication cookies
+   * Clears authentication cookies from the response.
+   * @param {Response} res - Express response object
+   * @returns {void}
    */
   private clearAuthCookies(res: Response): void {
     res.clearCookie('refresh_token', { path: this.REFRESH_TOKEN_COOKIE.path });
     res.clearCookie('access_token', { path: this.ACCESS_TOKEN_COOKIE.path });
   }
 
+  /**
+   * Handles user registration based on role (admin, candidate, or employer).
+   * Validates input data according to role-specific requirements.
+   * @param {Request} req - Express request object containing registration data in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<void>}
+   */
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
-      const role = getUserRole(req);
+      const role: Role = getUserRole(req);
 
       const registerData = req.body as
         | IAdminRegister
@@ -84,17 +111,17 @@ export class AuthenticationController {
       let registerErrors = null;
 
       switch (role) {
-        case 'admin':
+        case Role.ADMIN:
           registerErrors = adminRegisterValidator(
             registerData as IAdminRegister,
           );
           break;
-        case 'candidate':
+        case Role.CANDIDATE:
           registerErrors = candidateRegisterValidator(
             registerData as ICandidateRegister,
           );
           break;
-        case 'employer':
+        case Role.EMPLOYER:
           registerErrors = employerRegisterValidator(
             registerData as IEmployerRegister,
           );
@@ -113,8 +140,8 @@ export class AuthenticationController {
         });
       }
 
-      const response = await authenticationService.register(role, registerData);
-      responseUtil.sendSuccess(res, response);
+      await authenticationService.register(role, registerData);
+      responseUtil.sendSuccess(res, { message: 'Registration successful' });
     } catch (error) {
       responseUtil.sendError(res, {
         message: error.message,
@@ -123,11 +150,18 @@ export class AuthenticationController {
     }
   };
 
+  /**
+   * Handles user login with email and password credentials.
+   * Sets authentication cookies upon successful login.
+   * @param {Request} req - Express request object containing email and password in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<void>}
+   */
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password } = req.body;
       if (!email || !password) {
-        responseUtil.sendError(res, {
+        return responseUtil.sendError(res, {
           message: 'Email and password are required',
           statusCode: StatusCodes.BAD_REQUEST,
         });
@@ -154,14 +188,20 @@ export class AuthenticationController {
     }
   };
 
+  /**
+   * Handles user logout by invalidating tokens and clearing cookies.
+   * @param {Request} req - Express request object with userId in app.locals
+   * @param {Response} res - Express response object
+   * @returns {Promise<void>}
+   */
   public logout = async (req: Request, res: Response): Promise<void> => {
     try {
       const { userId } = req.app.locals;
 
-      const response = await authenticationService.logout(userId);
+      await authenticationService.logout(userId);
 
       this.clearAuthCookies(res);
-      responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
+      responseUtil.sendSuccess(res, { message: 'Logout successful' }, String(StatusCodes.OK));
     } catch (error) {
       this.clearAuthCookies(res);
       responseUtil.sendError(res, {
@@ -171,33 +211,13 @@ export class AuthenticationController {
     }
   };
 
-  public setupPassword = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { password } = req.body;
-      const { userId } = req.app.locals;
-
-      const passwordError = passwordValidator(password);
-      if (passwordError) {
-        return responseUtil.sendError(res, {
-          message: passwordError.details[0].message,
-          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
-        });
-      }
-
-      const response = await authenticationService.setupPassword(
-        userId,
-        password,
-      );
-      responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
-    } catch (error) {
-      this.clearAuthCookies(res);
-      responseUtil.sendError(res, {
-        message: error.message,
-        statusCode: error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
-      });
-    }
-  };
-
+  /**
+   * Handles token refresh using a valid refresh token.
+   * Issues new access and refresh tokens upon successful validation.
+   * @param {Request} req - Express request object with refresh_token cookie and userId in app.locals
+   * @param {Response} res - Express response object
+   * @returns {Promise<void>}
+   */
   public refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
       const refreshToken = req.cookies.refresh_token;
@@ -230,6 +250,13 @@ export class AuthenticationController {
     }
   };
 
+  /**
+   * Handles forgot password request by sending OTP to user's email.
+   * Validates email format before processing.
+   * @param {Request} req - Express request object containing email in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<void>}
+   */
   public forgotPassword = async (
     req: Request,
     res: Response,
@@ -245,8 +272,8 @@ export class AuthenticationController {
         });
       }
 
-      const response = await authenticationService.forgotPassword(email);
-      responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
+      await authenticationService.forgotPassword(email);
+      responseUtil.sendSuccess(res, { message: 'Password reset instructions sent' }, String(StatusCodes.OK));
     } catch (error) {
       responseUtil.sendError(res, {
         message: error.message,
@@ -255,12 +282,68 @@ export class AuthenticationController {
     }
   };
 
+  /**
+   * Verifies OTP sent to user's email during password reset flow.
+   * OTP must be a 6-digit number.
+   * @param {Request} req - Express request object containing email and otp in body
+   * @param {Response} res - Express response object
+   * @returns {Promise<void>}
+   */
+  public verifyOtp = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email, otp } = req.body;
+
+      if (!email || !otp) {
+        return responseUtil.sendError(res, {
+          message: 'Email and OTP are required',
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
+      }
+
+      const emailError = emailValidator(email);
+      if (emailError) {
+        return responseUtil.sendError(res, {
+          message: emailError.details[0].message,
+          statusCode: StatusCodes.UNPROCESSABLE_ENTITY,
+        });
+      }
+
+      if (!/^\d{6}$/.test(otp)) {
+        return responseUtil.sendError(res, {
+          message: 'OTP must be a 6-digit number.',
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
+      }
+
+      await authenticationService.verifyOtp(email, otp);
+      responseUtil.sendSuccess(res, { message: 'OTP verified successfully' }, String(StatusCodes.OK));
+    } catch (error) {
+      responseUtil.sendError(res, {
+        message: error.message,
+        statusCode: error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
+      });
+    }
+  };
+
+  /**
+   * Resets user password after successful OTP verification.
+   * Logs password reset activity with device and IP information.
+   * @param {Request} req - Express request object containing password in body, userId and userAgent in app.locals
+   * @param {Response} res - Express response object
+   * @returns {Promise<void>}
+   */
   public resetPassword = async (req: Request, res: Response): Promise<void> => {
     try {
       const { userId, userAgent } = req.app.locals;
-      const { password } = req.body;
+      const { newPassword, confirmPassword } = req.body;
 
-      const passwordError = passwordValidator(password);
+      if (!validateInput(newPassword, confirmPassword)) {
+        return responseUtil.sendError(res, {
+          message: 'Passwords do not match',
+          statusCode: StatusCodes.BAD_REQUEST,
+        });
+      }
+      const passwordError = passwordValidator(confirmPassword);
       if (passwordError) {
         return responseUtil.sendError(res, {
           message: passwordError.details[0].message,
@@ -275,9 +358,9 @@ export class AuthenticationController {
         ? ipHeader[0].trim()
         : ipHeader.split(',')[0].trim();
 
-      const response = await authenticationService.resetPassword(
+      await authenticationService.resetPassword(
         userId,
-        password,
+        confirmPassword,
         {
           browser: userAgent.browser,
           os: userAgent.os,
@@ -286,7 +369,7 @@ export class AuthenticationController {
         },
       );
 
-      responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
+      responseUtil.sendSuccess(res, { message: 'Password reset successful' }, String(StatusCodes.OK));
     } catch (error) {
       responseUtil.sendError(res, {
         message:

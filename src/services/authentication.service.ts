@@ -5,7 +5,6 @@ import {
   jwtUtil,
   passwordUtil,
   cacheUtil,
-  createFrontendUrl,
 } from '@work-whiz/utils';
 import {
   adminRepository,
@@ -78,6 +77,13 @@ class AuthenticationService extends BaseService {
     }
   };
 
+  /**
+   * Generates a 6-digit OTP
+   */
+  private generateOtp = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
   private constructor() {
     super();
   }
@@ -118,57 +124,36 @@ class AuthenticationService extends BaseService {
         });
       }
 
-      const newUser = await userRepository.create({ email, phone, role });
+      const hashedPassword = await passwordUtil.hashSync(role, data.password);
+
+      const newUser = await userRepository.create({
+        email,
+        phone,
+        role,
+        password: hashedPassword,
+      });
 
       await this.createRoleSpecificUser(role, {
         ...data,
         userId: newUser.id,
       });
 
-      const passwordSetupToken = await jwtUtil.generate({
-        id: newUser.id,
-        role: newUser.role,
-        type: 'password_setup',
-      });
-
-      const PASSWORD_SETUP_EXPIRATION = 1800;
-      const PASSWORD_SETUP_EXPIRATION_TEXT = '30 minutes';
-
-      const cacheKey = `password_setup:${newUser.id}`;
-      await cacheUtil.set(
-        cacheKey,
-        passwordSetupToken,
-        PASSWORD_SETUP_EXPIRATION,
-      );
-
-      console.log(
-        `User role: ${newUser.role}, ID: ${newUser.id}, Password setup token cached with key: ${cacheKey}`,
-      );
-      const frontendUrl = createFrontendUrl(newUser.role);
-
-      console.log(`Frontend URL for role ${newUser.role}: ${frontendUrl}`);
-      const setupUrl = new URL(
-        `${frontendUrl.replace(/\/+$/, '')}/auth/password/setup`,
-      );
-      setupUrl.searchParams.set('token', passwordSetupToken);
-
+      // Send welcome email
       await authenticationQueue.add({
         email,
-        subject: 'Complete Your Account Setup',
+        subject: `Welcome to ${process.env.APP_NAME}!`,
         template: {
-          name: 'password_setup',
+          name: 'welcome',
           content: {
             email,
-            uri: setupUrl.toString(),
-            expiration: PASSWORD_SETUP_EXPIRATION_TEXT,
             appName: process.env.APP_NAME,
+            role,
           },
         },
       });
 
       return {
-        message:
-          'Account created successfully. Please check your email to set your password.',
+        message: 'Account created successfully.',
       };
     }, this.register.name);
 
@@ -279,77 +264,6 @@ class AuthenticationService extends BaseService {
     }, this.logout.name);
 
   /**
-   * Sets up the password for the user and updates the user's verification status.
-   *
-   * @param {string} userId - The ID of the user whose password is being set up.
-   * @param {string} password - The password to be set for the user.
-   * @returns {Promise<{ message: string }>} - A message indicating the result of the password setup operation.
-   *
-   * @throws {ServiceError} - Throws an error if the user account is not found or the update fails.
-   *
-   * @example
-   * const result = await authService.setupPassword('user-id', 'newPassword');
-   */
-  public setupPassword = async (
-    userId: string,
-    password: string,
-  ): Promise<{ message: string }> =>
-    this.handleErrors(async () => {
-      const user = await userRepository.read({ id: userId });
-      if (!user) {
-        throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
-          message:
-            'An error occurred while setting password. Please try again.',
-          trace: {
-            method: this.setupPassword.name,
-            context: {
-              userId,
-              error: 'User record not found',
-            },
-          },
-        });
-      }
-
-      const hashedPassword = await passwordUtil.hashSync(user.role, password);
-
-      const updatedUser = await userRepository.update(user.id, {
-        password: hashedPassword,
-        isVerified: true,
-      });
-
-      if (!updatedUser) {
-        throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
-          message:
-            'An error occurred while setting up your password. Please try again.',
-          trace: {
-            method: this.setupPassword.name,
-            context: { userId },
-          },
-        });
-      }
-
-      const cacheKey = `password_setup:${user.id}`;
-      await cacheUtil.delete(cacheKey);
-
-      await authenticationQueue.add({
-        email: user.email,
-        subject: 'Your Password Was Successfully Set Up',
-        template: {
-          name: 'password_setup_confirmation',
-          content: {
-            email: user.email,
-            timestamp: new Date().toLocaleString(),
-          },
-        },
-      });
-
-      return {
-        message:
-          'Your password was successfully set up. You can now log in to your account using your new credentials.',
-      };
-    }, this.setupPassword.name);
-
-  /**
    * Refreshes the user's access and refresh tokens.
    *
    * @param {string} userId - The ID of the user whose tokens are being refreshed.
@@ -406,7 +320,7 @@ class AuthenticationService extends BaseService {
     }, this.refreshToken.name);
 
   /**
-   * Handles password reset request.
+   * Handles password reset request by sending an OTP to the user's email.
    *
    * @param email - The user's email address.
    * @returns A success message whether the email exists or not.
@@ -416,7 +330,7 @@ class AuthenticationService extends BaseService {
   public forgotPassword = async (email: string): Promise<{ message: string }> =>
     this.handleErrors(async () => {
       const genericSuccessMessage =
-        'If an account exists with this email, a password reset link has been sent.';
+        'If an account exists with this email, an OTP has been sent for password reset.';
 
       const user = await userRepository.read({ email });
       if (!user) {
@@ -451,28 +365,22 @@ class AuthenticationService extends BaseService {
         });
       }
 
-      const passwordResetToken = await jwtUtil.generate({
-        id: user.id,
-        role: user.role,
-        type: 'password_reset',
-      });
+      const otp = this.generateOtp();
+      const OTP_EXPIRATION = 10 * 60; // 10 minutes
+      const OTP_EXPIRATION_TEXT = '10 minutes';
 
-      const cacheKey = `password_reset:${user.id}`;
-      await cacheUtil.set(cacheKey, passwordResetToken, 30 * 60);
-
-      const frontEndUrl = createFrontendUrl(user.role);
-      const resetUrl = new URL(`${frontEndUrl}/auth/password/reset`);
-      resetUrl.searchParams.set('token', passwordResetToken);
+      const cacheKey = `password_reset_otp:${user.id}`;
+      await cacheUtil.set(cacheKey, otp, OTP_EXPIRATION);
 
       await authenticationQueue.add({
         email: user.email,
-        subject: 'Password Reset Request',
+        subject: 'Password Reset OTP',
         template: {
-          name: 'password_reset',
+          name: 'password_reset_otp',
           content: {
             email: user.email,
-            uri: resetUrl.toString(),
-            expiration: '30 minutes',
+            otp,
+            expiration: OTP_EXPIRATION_TEXT,
             appName: process.env.APP_NAME,
           },
         },
@@ -480,6 +388,71 @@ class AuthenticationService extends BaseService {
 
       return { message: genericSuccessMessage };
     }, this.forgotPassword.name);
+
+  /**
+   * Verifies the OTP and generates a password reset token.
+   *
+   * @param {string} email - The user's email address.
+   * @param {string} otp - The OTP entered by the user.
+   * @returns {Promise<{ token: string; message: string }>} - Password reset token and success message.
+   *
+   * @throws {ServiceError} - If the OTP is invalid or expired.
+   */
+  public verifyOtp = async (
+    email: string,
+    otp: string,
+  ): Promise<{ token: string; message: string }> =>
+    this.handleErrors(async () => {
+      const user = await userRepository.read({ email });
+      if (!user) {
+        throw new ServiceError(StatusCodes.BAD_REQUEST, {
+          message: 'Invalid or expired OTP',
+          trace: {
+            method: this.verifyOtp.name,
+            context: {
+              email,
+              error: 'User not found',
+            },
+          },
+        });
+      }
+
+      const cacheKey = `password_reset_otp:${user.id}`;
+      const cachedOtp = await cacheUtil.get(cacheKey);
+
+      if (!cachedOtp || cachedOtp !== otp) {
+        throw new ServiceError(StatusCodes.BAD_REQUEST, {
+          message: 'Invalid or expired OTP',
+          trace: {
+            method: this.verifyOtp.name,
+            context: {
+              email,
+              userId: user.id,
+              error: 'OTP mismatch or not found',
+            },
+          },
+        });
+      }
+
+      // Delete OTP after successful verification
+      await cacheUtil.delete(cacheKey);
+
+      // Generate password reset token
+      const passwordResetToken = await jwtUtil.generate({
+        id: user.id,
+        role: user.role,
+        type: 'password_reset',
+      });
+
+      const TOKEN_EXPIRATION = 15 * 60; // 15 minutes
+      const tokenCacheKey = `password_reset_token:${user.id}`;
+      await cacheUtil.set(tokenCacheKey, passwordResetToken, TOKEN_EXPIRATION);
+
+      return {
+        token: passwordResetToken,
+        message: 'OTP verified successfully.',
+      };
+    }, this.verifyOtp.name);
 
   /**
    * Completes the password reset process by validating the reset token and updating the user's password.
@@ -526,6 +499,23 @@ class AuthenticationService extends BaseService {
         });
       }
 
+      // Verify token exists in cache
+      const tokenCacheKey = `password_reset_token:${user.id}`;
+      const cachedToken = await cacheUtil.get(tokenCacheKey);
+
+      if (!cachedToken) {
+        throw new ServiceError(StatusCodes.BAD_REQUEST, {
+          message: 'Invalid or expired password reset token',
+          trace: {
+            method: this.resetPassword.name,
+            context: {
+              userId,
+              error: 'Token not found in cache',
+            },
+          },
+        });
+      }
+
       const isSamePassword = await passwordUtil.compareSync(
         user.role,
         password,
@@ -549,8 +539,8 @@ class AuthenticationService extends BaseService {
         password: hashedPassword,
       });
 
-      const cacheKey = `password_reset:${user.id}`;
-      await cacheUtil.delete(cacheKey);
+      // Delete token from cache after successful reset
+      await cacheUtil.delete(tokenCacheKey);
 
       await authenticationQueue.add({
         email: user.email,

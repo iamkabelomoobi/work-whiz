@@ -8,7 +8,6 @@ import { candidateRegisterSchema } from './schemas/candidate-register.schema';
 export const candidateRegisterValidator = (data: {
   firstName: string;
   lastName: string;
-  title: string;
   email: string;
   phone: string;
 }) => {

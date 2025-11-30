@@ -21,7 +21,6 @@ import {
   JobRoutes,
 } from '@work-whiz/routes';
 import { authenticationQueue, applicationQueue } from '@work-whiz/queues';
-import { authenticationMiddleware } from '.';
 import rateLimit from 'express-rate-limit';
 
 export const configureMiddlewares = (app: Application): void => {
