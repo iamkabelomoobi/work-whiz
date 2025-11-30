@@ -1,6 +1,7 @@
 export interface IBaseRegister {
   email: string;
   phone: string;
+  password: string;
 }
 
 export interface IAdminRegister extends IBaseRegister {

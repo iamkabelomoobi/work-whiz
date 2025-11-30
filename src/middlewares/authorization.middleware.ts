@@ -25,9 +25,9 @@ class AuthorizationMiddleware {
   ): Promise<void> => {
     try {
       const role = getUserRole(req);
-      const { password, token } = req.body;
+      const { newPassword, confirmPassword, token } = req.body;
 
-      if (!password || !token) {
+      if (!newPassword || !confirmPassword || !token) {
         return responseUtil.sendError(res, {
           message: 'Password and token are required',
           statusCode: StatusCodes.BAD_REQUEST,

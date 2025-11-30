@@ -36,6 +36,5 @@
       "exclude": ["e2e/**/*"]
     }
   ],
-  "nxCloudAccessToken": "ZjZmMWI0MjYtNTlmMC00NGNhLWEwYmYtOGJmODIzYjJlMGJhfHJlYWQtd3JpdGU=",
-  "useLegacyCache": true
+  "nxCloudAccessToken": "ZjZmMWI0MjYtNTlmMC00NGNhLWEwYmYtOGJmODIzYjJlMGJhfHJlYWQtd3JpdGU="
 }
