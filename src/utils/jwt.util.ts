@@ -40,6 +40,7 @@ export default class JwtUtil {
 
   private constructor() {
     this.expirationTimes = {
+      account_verification: 10 * 60, // 10 minutes in seconds
       access: 15 * 60, // 15 minutes in seconds
       refresh: 7 * 24 * 60 * 60, // 7 days in seconds
       password_setup: 30 * 60, // 15 minutes in seconds

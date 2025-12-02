@@ -14,6 +14,12 @@ const registerLimiter = rateLimit({
   message: 'Too many registration attempts, please try again later.',
 });
 
+const verifyAccountLimiter = rateLimit({
+  windowMs: FIFTEEN_MINUTES,
+  max: 2,
+  message: 'Too many verification attempts, please try again later.',
+});
+
 const loginLimiter = rateLimit({
   windowMs: FIFTEEN_MINUTES,
   max: 10,
@@ -47,6 +53,7 @@ const createLimiter = rateLimit({
 export {
   profileLimiter,
   registerLimiter,
+  verifyAccountLimiter,
   loginLimiter,
   logoutLimiter,
   forgotPasswordLimiter,
