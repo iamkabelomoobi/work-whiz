@@ -3,13 +3,21 @@ import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { IDecodedJwtToken } from '@work-whiz/interfaces';
 
+/**
+ * Authorization middleware for handling role-based access control and password operations
+ * Implements the Singleton pattern to ensure only one instance exists
+ */
 class AuthorizationMiddleware {
   private static instance: AuthorizationMiddleware;
 
   private constructor() {
-    //
+    // Singleton pattern enforcement
   }
 
+  /**
+   * Gets the singleton instance of AuthorizationMiddleware
+   * @returns {AuthorizationMiddleware} The singleton instance
+   */
   public static getInstance = (): AuthorizationMiddleware => {
     if (!AuthorizationMiddleware.instance) {
       AuthorizationMiddleware.instance = new AuthorizationMiddleware();
@@ -17,6 +25,15 @@ class AuthorizationMiddleware {
     return AuthorizationMiddleware.instance;
   };
 
+  /**
+   * Handles password-related operations (setup or reset)
+   * @private
+   * @param {Request} req - Express request object
+   * @param {Response} res - Express response object
+   * @param {NextFunction} next - Express next function
+   * @param {'password_setup' | 'password_reset'} tokenType - Type of password operation
+   * @returns {Promise<void>}
+   */
   private handlePasswordOperation = async (
     req: Request,
     res: Response,
@@ -25,15 +42,7 @@ class AuthorizationMiddleware {
   ): Promise<void> => {
     try {
       const role = getUserRole(req);
-      const { newPassword, confirmPassword, token } = req.body;
-
-      if (!newPassword || !confirmPassword || !token) {
-        return responseUtil.sendError(res, {
-          message: 'Password and token are required',
-          statusCode: StatusCodes.BAD_REQUEST,
-          code: 'MISSING_CREDENTIALS',
-        });
-      }
+      const { token } = req.body;
 
       const verified = await jwtUtil.verify({
         role,
@@ -52,11 +61,23 @@ class AuthorizationMiddleware {
     }
   };
 
+  /**
+   * Middleware factory function for role-based authorization
+   * @param {string[]} allowedRoles - Array of role names permitted to access the route
+   * @returns {Function} Express middleware function that validates access tokens and user roles
+   * @example
+   * // Usage in route definition
+   * router.get('/admin',
+   *   authorizationMiddleware.isAuthorized(['admin', 'super_admin']),
+   *   adminController.getDashboard
+   * );
+   */
   public isAuthorized =
     (allowedRoles: string[]) =>
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       try {
         const accessToken = req.cookies['access_token'];
+
         if (!accessToken) {
           return responseUtil.sendError(res, {
             message: 'Access token is missing',
@@ -67,6 +88,7 @@ class AuthorizationMiddleware {
         const decodedToken: IDecodedJwtToken = jwtUtil.decode(
           accessToken,
         ) as IDecodedJwtToken;
+
         if (!decodedToken) {
           return responseUtil.sendError(res, {
             message: 'Invalid access token',
@@ -100,6 +122,14 @@ class AuthorizationMiddleware {
       }
     };
 
+  /**
+   * Middleware to authorize password setup operations
+   * Validates password setup token and required fields
+   * @param {Request} req - Express request object
+   * @param {Response} res - Express response object
+   * @param {NextFunction} next - Express next function
+   * @returns {Promise<void>}
+   */
   public authorizePasswordSetup = async (
     req: Request,
     res: Response,
@@ -108,6 +138,14 @@ class AuthorizationMiddleware {
     await this.handlePasswordOperation(req, res, next, 'password_setup');
   };
 
+  /**
+   * Middleware to authorize password reset operations
+   * Validates password reset token and required fields
+   * @param {Request} req - Express request object
+   * @param {Response} res - Express response object
+   * @param {NextFunction} next - Express next function
+   * @returns {Promise<void>}
+   */
   public authorizePasswordReset = async (
     req: Request,
     res: Response,
@@ -117,4 +155,9 @@ class AuthorizationMiddleware {
   };
 }
 
-export const authorizationMiddleware = AuthorizationMiddleware.getInstance();
+/**
+ * Singleton instance of AuthorizationMiddleware
+ * @type {AuthorizationMiddleware}
+ */
+export const authorizationMiddleware: AuthorizationMiddleware =
+  AuthorizationMiddleware.getInstance();

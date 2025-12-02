@@ -138,14 +138,21 @@ class AuthenticationService extends BaseService {
         userId: newUser.id,
       });
 
-      // Send welcome email
+      const otp = this.generateOtp();
+      const OTP_EXPIRATION = 10 * 60; // 10 minutes
+      const cacheKey = `account_verification_otp:${newUser.email}`;
+      await cacheUtil.set(cacheKey, otp, OTP_EXPIRATION);
+
+      // Send verification email
       await authenticationQueue.add({
         email,
-        subject: `Welcome to ${process.env.APP_NAME}!`,
+        subject: `Verify your ${process.env.APP_NAME} account`,
         template: {
-          name: 'welcome',
+          name: 'account_verification_otp',
           content: {
             email,
+            otp,
+            expiration: '10 minutes',
             appName: process.env.APP_NAME,
             role,
           },
@@ -153,16 +160,64 @@ class AuthenticationService extends BaseService {
       });
 
       return {
-        message: 'Account created successfully.',
+        message: 'Account created successfully. Please verify your email.',
       };
     }, this.register.name);
 
   /**
-   * Authenticates a user based on email and password.
+   * Verifies account OTP and activates user, returns tokens
+   * @param {string} email - User email
+   * @param {string} otp - OTP code
+   * @returns {Promise<{ accessToken: string; refreshToken: string }>}
+   */
+  public verifyAccountOtp = async (
+    email: string,
+    otp: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> =>
+    this.handleErrors(async () => {
+      const user = await userRepository.read({ email });
+      if (!user) {
+        throw new ServiceError(StatusCodes.NOT_FOUND, {
+          message: 'User not found.',
+          trace: {
+            method: this.verifyAccountOtp.name,
+            context: { email },
+          },
+        });
+      }
+
+      const cacheKey = `account_verification_otp:${email}`;
+      const cachedOtp = await cacheUtil.get(cacheKey);
+      
+      if (!cachedOtp || cachedOtp !== otp) {
+        throw new ServiceError(StatusCodes.UNAUTHORIZED, {
+          message: 'Invalid or expired OTP.',
+          trace: {
+            method: this.verifyAccountOtp.name,
+            context: { email },
+          },
+        });
+      }
+
+      await userRepository.update(user.id, { isVerified: true });
+      await cacheUtil.delete(cacheKey);
+
+      const [accessToken, refreshToken] = await Promise.all([
+        jwtUtil.generate({ id: user.id, role: user.role, type: 'access' }),
+        jwtUtil.generate({ id: user.id, role: user.role, type: 'refresh' }),
+      ]);
+
+      return { accessToken, refreshToken };
+    }, this.verifyAccountOtp.name);
+
+  /**
+   * Logs in a user by validating credentials and generating tokens.
    *
-   * @param {string} email - The email address of the user trying to log in.
-   * @param {string} password - The password provided by the user.
-   * @returns {Promise<{ accessToken: string; refreshToken: string }>} - A promise that resolves with the access and refresh tokens.
+   * @param email - The user's email
+   * @param password - The user's password
+   * @returns Access and refresh tokens
+   *
+   * @throws {ServiceError} - If credentials are invalid or account is locked
    */
   public login = async (
     email: string,
@@ -434,10 +489,8 @@ class AuthenticationService extends BaseService {
         });
       }
 
-      // Delete OTP after successful verification
       await cacheUtil.delete(cacheKey);
 
-      // Generate password reset token
       const passwordResetToken = await jwtUtil.generate({
         id: user.id,
         role: user.role,
@@ -499,7 +552,6 @@ class AuthenticationService extends BaseService {
         });
       }
 
-      // Verify token exists in cache
       const tokenCacheKey = `password_reset_token:${user.id}`;
       const cachedToken = await cacheUtil.get(tokenCacheKey);
 
@@ -539,7 +591,6 @@ class AuthenticationService extends BaseService {
         password: hashedPassword,
       });
 
-      // Delete token from cache after successful reset
       await cacheUtil.delete(tokenCacheKey);
 
       await authenticationQueue.add({

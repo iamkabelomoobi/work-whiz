@@ -10,6 +10,7 @@ import {
   forgotPasswordLimiter,
   resetPasswordLimiter,
 } from '@work-whiz/middlewares';
+import { verifyAccountLimiter } from '@work-whiz/middlewares/rate-limiter.middleware';
 
 /**
  * @swagger
@@ -136,6 +137,42 @@ export class AuthenticationRoutes {
          */
 
         .post('/register', registerLimiter, authenticationController.register)
+
+        /**
+         * @swagger
+         * /api/v1/auth/verify-account:
+         *   post:
+         *     summary: Verify account with OTP
+         *     tags: [Auth]
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               otp:
+         *                 type: string
+         *                 pattern: '^\\d{6}$'
+         *     responses:
+         *       200:
+         *         description: Account verified successfully
+         *         content:
+         *           application/json:
+         *             schema:
+         *               type: object
+         *               properties:
+         *                 message:
+         *                   type: string
+         *       400:
+         *         description: Invalid or expired OTP
+         */
+        .post(
+          '/verify-account',
+          verifyAccountLimiter,
+          authorizationMiddleware.authorizeVerifyAccount,
+          authenticationController.verifyAccount,
+        )
 
         /**
          * @swagger
