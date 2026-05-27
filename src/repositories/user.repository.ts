@@ -1,6 +1,5 @@
-import { Op, WhereOptions, Transaction } from 'sequelize';
-import { sequelize } from '@work-whiz/libs';
-import { UserModel } from '@work-whiz/models';
+import { Prisma } from '@prisma/client';
+import { prisma } from '@work-whiz/libs';
 import { toIUserDTO } from '@work-whiz/dtos';
 import {
   IUser,
@@ -10,98 +9,47 @@ import {
 } from '@work-whiz/interfaces';
 import { RepositoryError } from '@work-whiz/errors';
 import { Pagination } from '@work-whiz/utils';
+import {
+  getPrismaOrderBy,
+  PrismaRepositoryClient,
+} from './prisma.repository';
 
-/**
- * Repository class for handling User entity database operations
- * @class UserRepository
- * @implements {IUserRepository}
- */
 class UserRepository implements IUserRepository {
   private static instance: UserRepository;
-  protected userModel: typeof UserModel;
-  protected transaction?: Transaction;
+  protected client: PrismaRepositoryClient;
 
-  /**
-   * Constructs WHERE clause for Sequelize queries based on filter criteria
-   * @private
-   * @param {IUserQuery} query - The query parameters
-   * @returns {WhereOptions} Sequelize where options
-   * @example
-   * // Returns { id: { [Op.eq]: '123' } }
-   * buildWhereClause({ id: '123' });
-   */
-  private readonly buildWhereClause = (query: IUserQuery): WhereOptions => {
-    const where: WhereOptions = {};
+  private constructor(client: PrismaRepositoryClient = prisma) {
+    this.client = client;
+  }
 
-    if (query.id) {
-      where.id = { [Op.eq]: query.id };
-    }
+  private readonly buildWhereClause = (query: IUserQuery): Prisma.UserWhereInput => {
+    const where: Prisma.UserWhereInput = {};
 
-    if (query.email) {
-      where.email = {
-        [Op.eq]: query.email.toLowerCase(),
-      };
-    }
-
-    if (query.phone) {
-      where.phone = {
-        [Op.eq]: query.phone,
-      };
-    }
-
-    if (query.role) {
-      where.role = { [Op.eq]: query.role };
-    }
-
-    if (typeof query.isActive === 'boolean') {
-      where.isActive = { [Op.eq]: query.isActive };
-    }
-
-    if (typeof query.isVerified === 'boolean') {
-      where.isVerified = { [Op.eq]: query.isVerified };
-    }
-
-    if (typeof query.isLocked === 'boolean') {
-      where.isLocked = { [Op.eq]: query.isLocked };
-    }
+    if (query.id) where.id = query.id;
+    if (query.email) where.email = query.email.toLowerCase();
+    if (query.phone) where.phone = query.phone;
+    if (query.role) where.role = query.role;
+    if (typeof query.isActive === 'boolean') where.isActive = query.isActive;
+    if (typeof query.isVerified === 'boolean') where.isVerified = query.isVerified;
+    if (typeof query.isLocked === 'boolean') where.isLocked = query.isLocked;
 
     return where;
   };
 
-  /**
-   * Gets Sequelize options including transaction if available
-   * @private
-   * @returns {object} Sequelize options object
-   */
-  private getOptions() {
-    return this.transaction ? { transaction: this.transaction } : {};
+  private readonly toDtoInput = (user: unknown): IUser => {
+    const dtoUser = user as Partial<IUser>;
+
+    return {
+      ...dtoUser,
+      avatarUrl: dtoUser.avatarUrl || '',
+      password: dtoUser.password || '',
+    } as IUser;
+  };
+
+  public withTransaction(transaction: Prisma.TransactionClient): UserRepository {
+    return new UserRepository(transaction);
   }
 
-  /**
-   * Private constructor for singleton pattern
-   * @private
-   */
-  private constructor() {
-    this.userModel = UserModel;
-  }
-
-  /**
-   * Creates a new repository instance bound to a transaction
-   * @param {Transaction} transaction - Sequelize transaction
-   * @returns {UserRepository} New repository instance with transaction
-   */
-  public withTransaction(transaction: Transaction): UserRepository {
-    const repository = new UserRepository();
-    repository.userModel = this.userModel;
-    repository.transaction = transaction;
-    return repository;
-  }
-
-  /**
-   * Gets singleton repository instance
-   * @static
-   * @returns {UserRepository} The repository instance
-   */
   public static getInstance(): UserRepository {
     if (!UserRepository.instance) {
       UserRepository.instance = new UserRepository();
@@ -109,77 +57,30 @@ class UserRepository implements IUserRepository {
     return UserRepository.instance;
   }
 
-  /**
-   * Creates a new user record
-   * @param {Partial<IUser>} user - User data without id
-   * @param {Transaction} [transaction] - Optional transaction
-   * @returns {Promise<IUser>} The created user DTO
-   * @throws {RepositoryError} If creation fails
-   * @example
-   * await userRepository.create({ email: 'test@example.com', ... });
-   */
-  public async create(
-    user: Partial<IUser>,
-    transaction?: Transaction,
-  ): Promise<IUser> {
-    const t = transaction || (await sequelize.transaction());
-    const isLocalTransaction = !transaction;
-
+  public async create(user: Partial<IUser>): Promise<IUser> {
     try {
-      const newUser = await this.userModel.create(user, {
-        ...this.getOptions(),
-        transaction: t,
+      const newUser = await this.client.user.create({
+        data: user as Prisma.UserUncheckedCreateInput,
       });
 
-      if (isLocalTransaction) {
-        await t.commit();
-      }
-
-      return toIUserDTO(newUser);
+      return toIUserDTO(this.toDtoInput(newUser));
     } catch (error) {
-      if (isLocalTransaction) {
-        await t.rollback();
-      }
       throw new RepositoryError('Failed to create user', error);
     }
   }
 
-  /**
-   * Retrieves a single user by query criteria
-   * @param {IUserQuery} query - Search criteria
-   * @returns {Promise<IUser>} User DTO if found, null otherwise
-   * @throws {RepositoryError} If query fails
-   * @example
-   * // Find by email
-   * await userRepository.read({ email: 'test@example.com' });
-   */
   public async read(query: IUserQuery): Promise<IUser | null> {
     try {
-      const user = await this.userModel.findOne({
+      const user = await this.client.user.findFirst({
         where: this.buildWhereClause(query),
-        ...this.getOptions(),
       });
 
-      return user ? toIUserDTO(user) : null;
+      return user ? toIUserDTO(this.toDtoInput(user)) : null;
     } catch (error) {
-      console.error(error);
       throw new RepositoryError('Failed to retrieve user', error);
     }
   }
 
-  /**
-   * Retrieves paginated list of users matching query criteria
-   * @param {IUserQuery} query - Filter criteria
-   * @param {IPaginationQueryOptions} options - Pagination configuration
-   * @returns {Promise<PaginatedResponse<IUser>>} Paginated user results
-   * @throws {RepositoryError} If query fails
-   * @example
-   * // Get first page of active users
-   * await userRepository.readAll(
-   *   { isActive: true },
-   *   { page: 1, limit: 10 }
-   * );
-   */
   public async readAll(
     query: IUserQuery,
     options: IPaginationQueryOptions,
@@ -191,22 +92,22 @@ class UserRepository implements IUserRepository {
     perPage: number;
   }> {
     const pagination = new Pagination(options);
+    const where = this.buildWhereClause(query);
 
     try {
-      const { rows, count } = await this.userModel.findAndCountAll({
-        where: this.buildWhereClause(query),
-        offset: pagination.getOffset(),
-        limit: pagination.limit,
-        order: pagination.getOrder(),
-        ...this.getOptions(),
-      });
+      const [users, count] = await Promise.all([
+        this.client.user.findMany({
+          where,
+          skip: pagination.getOffset(),
+          take: pagination.limit,
+          orderBy: getPrismaOrderBy(pagination.sort),
+        }),
+        this.client.user.count({ where }),
+      ]);
 
       return {
-        users: rows.map(user =>
-          toIUserDTO({
-            ...user.get({ plain: true }),
-            avatarUrl: user.avatarUrl || '',
-          }),
+        users: users.map(user =>
+          toIUserDTO(this.toDtoInput(user)),
         ),
         total: count,
         totalPages: pagination.getTotalPages(count),
@@ -218,73 +119,35 @@ class UserRepository implements IUserRepository {
     }
   }
 
-  /**
-   * Updates a user by ID
-   * @param {string} id - User ID to update
-   * @param {Partial<IUser>} data - Data to update
-   * @param {Transaction} [transaction] - Optional transaction
-   * @returns {Promise<IUser>} Updated user DTO if found, null otherwise
-   * @throws {RepositoryError} If update fails
-   */
-  public async update(
-    id: string,
-    data: Partial<IUser>,
-    transaction?: Transaction,
-  ): Promise<IUser> {
-    const t = transaction || (await sequelize.transaction());
-    const isLocalTransaction = !transaction;
-
+  public async update(id: string, data: Partial<IUser>): Promise<IUser | null> {
     try {
-      const [affectedRows] = await this.userModel.update(data, {
+      const updatedUser = await this.client.user.update({
         where: { id },
-        transaction: t,
+        data: data as Prisma.UserUncheckedUpdateInput,
       });
 
-      if (affectedRows > 0) {
-        const updatedUser = await this.read({ id });
-        if (isLocalTransaction) {
-          await t.commit();
-        }
-        return toIUserDTO(updatedUser);
-      }
-
-      if (isLocalTransaction) {
-        await t.rollback();
-      }
-      return null;
+      return toIUserDTO(this.toDtoInput(updatedUser));
     } catch (error) {
-      if (isLocalTransaction) {
-        await t.rollback();
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        return null;
       }
       throw new RepositoryError('Failed to update user', error);
     }
   }
 
-  /**
-   * Deletes a user by ID
-   * @param {string} id - User ID to delete
-   * @param {Transaction} [transaction] - Optional transaction
-   * @returns {Promise<boolean>} True if deletion succeeded, false otherwise
-   * @throws {RepositoryError} If deletion fails
-   */
-  public async delete(id: string, transaction?: Transaction): Promise<boolean> {
-    const t = transaction || (await sequelize.transaction());
-    const isLocalTransaction = !transaction;
-
+  public async delete(id: string): Promise<boolean> {
     try {
-      const deletedRows = await this.userModel.destroy({
-        where: { id },
-        transaction: t,
-      });
-
-      if (isLocalTransaction) {
-        await t.commit();
-      }
-
-      return deletedRows > 0;
+      await this.client.user.delete({ where: { id } });
+      return true;
     } catch (error) {
-      if (isLocalTransaction) {
-        await t.rollback();
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        return false;
       }
       throw new RepositoryError('Failed to delete user', error);
     }

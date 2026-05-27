@@ -1,17 +1,17 @@
 import {
-  AdminModel,
-  ApplicationModel,
-  CandidateModel,
-  EmployerModel,
-  JobModel,
-  UserModel,
-} from '@work-whiz/models';
+  Admin,
+  Application,
+  Candidate,
+  Employer,
+  Job,
+  User,
+} from '@prisma/client';
 
 export interface IModelDictionary {
-  AdminModel: typeof AdminModel;
-  ApplicationModel: typeof ApplicationModel;
-  CandidateModel: typeof CandidateModel;
-  EmployerModel: typeof EmployerModel;
-  JobModel: typeof JobModel;
-  UserModel: typeof UserModel;
+  AdminModel: Admin;
+  ApplicationModel: Application;
+  CandidateModel: Candidate;
+  EmployerModel: Employer;
+  JobModel: Job;
+  UserModel: User;
 }

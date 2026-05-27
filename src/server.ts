@@ -8,8 +8,7 @@ import cluster from 'cluster';
 import { Application } from 'express';
 import { cleanEnv, num, str } from 'envalid';
 import { logger } from '@work-whiz/utils';
-import { sequelize } from '@work-whiz/libs';
-import { associateModels } from '@work-whiz/models/associate';
+import { prisma } from '@work-whiz/libs';
 
 dotenv.config();
 
@@ -83,8 +82,8 @@ const setupGracefulShutdown = (server: http.Server): void => {
     });
 
     try {
-      if (sequelize) {
-        await sequelize.close();
+      if (prisma) {
+        await prisma.$disconnect();
         logger.info('Database connection closed');
       }
 
@@ -185,11 +184,7 @@ export const startServer = async (
   }
 
   try {
-    await sequelize.authenticate();
-
-    associateModels();
-
-    await sequelize.sync({ force: false, alter: true });
+    await prisma.$connect();
 
     logger.info('Database connection established successfully', {
       dbHost: env.POSTGRES_HOST,

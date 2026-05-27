@@ -20,7 +20,7 @@ export class Pagination implements IPaginationQueryOptions {
   }
 
   /**
-   * Calculates the offset for Sequelize queries
+   * Calculates the offset for paginated database queries
    * @returns {number}
    */
   public getOffset(): number {
@@ -28,7 +28,7 @@ export class Pagination implements IPaginationQueryOptions {
   }
 
   /**
-   * Get the order clause for Sequelize
+   * Get the order clause entries for database queries
    * @returns {[string, 'ASC' | 'DESC'][] | undefined}
    */
   public getOrder(): [string, 'ASC' | 'DESC'][] | undefined {

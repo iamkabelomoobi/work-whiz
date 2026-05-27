@@ -29,6 +29,7 @@ const {
   POSTGRES_DATABASE_NAME,
   POSTGRES_HOST,
   POSTGRES_PASSWORD,
+  POSTGRES_PORT,
   POSTGRES_USERNAME,
 
   // Redis Configuration
@@ -106,6 +107,7 @@ export const config: IConfig = {
       username: POSTGRES_USERNAME,
       password: POSTGRES_PASSWORD,
       host: POSTGRES_HOST,
+      port: POSTGRES_PORT ? parseInt(POSTGRES_PORT, 10) : 5432,
     },
     redis: {
       host: REDIS_HOST,

@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Prisma } from '@prisma/client';
 import {
   ICandidate,
   ICandidateQuery,
@@ -52,5 +52,5 @@ export interface ICandidateRepository {
    */
   update(userId: string, data: Partial<ICandidate>): Promise<ICandidate | null>;
 
-  withTransaction(t: Transaction): ICandidateRepository;
+  withTransaction(t: Prisma.TransactionClient): ICandidateRepository;
 }

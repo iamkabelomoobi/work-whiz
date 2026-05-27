@@ -1,5 +1,5 @@
-import { Op, WhereOptions, Transaction } from 'sequelize';
-import { CandidateModel, UserModel } from '@work-whiz/models';
+import { Prisma } from '@prisma/client';
+import { prisma } from '@work-whiz/libs';
 import {
   ICandidate,
   ICandidateQuery,
@@ -8,105 +8,58 @@ import {
 } from '@work-whiz/interfaces';
 import { RepositoryError } from '@work-whiz/errors';
 import { Pagination } from '@work-whiz/utils';
-import { sequelize } from '@work-whiz/libs';
 import { toICandidateDTO } from '@work-whiz/dtos';
+import {
+  getPrismaOrderBy,
+  PrismaRepositoryClient,
+  userSelectWithoutPassword,
+} from './prisma.repository';
 
-/**
- * Repository class for handling Candidate entity database operations
- * @class CandidateRepository
- * @implements {ICandidateRepository}
- */
 class CandidateRepository implements ICandidateRepository {
   private static instance: CandidateRepository;
-  protected candidateModel: typeof CandidateModel;
-  protected transaction?: Transaction;
+  protected client: PrismaRepositoryClient;
 
-  /**
-   * Constructs WHERE clause for Sequelize queries based on filter criteria
-   * @private
-   * @param {ICandidateQuery} query - The query parameters
-   * @returns {WhereOptions<CandidateModel>} Sequelize where options
-   * @example
-   * // Returns { [Op.or]: [{firstName: {[Op.iLike]: '%john%'}}, {lastName: {[Op.iLike]: '%john%'}}] }
-   * buildWhereClause({ name: 'john' });
-   */
+  private constructor(client: PrismaRepositoryClient = prisma) {
+    this.client = client;
+  }
+
   private readonly buildWhereClause = (
     query: ICandidateQuery,
-  ): WhereOptions<CandidateModel> => {
-    const where: WhereOptions<CandidateModel> = {};
+  ): Prisma.CandidateWhereInput => {
+    const where: Prisma.CandidateWhereInput = {};
 
-    if (query.id) {
-      where.id = { [Op.eq]: query.id };
+    if (query.id) where.id = query.id;
+    if (query.userId) where.userId = query.userId;
+    if (typeof query.firstName === 'string') {
+      where.firstName = { contains: query.firstName, mode: 'insensitive' };
     }
-
-    if (query.userId) {
-      where.userId = { [Op.eq]: query.userId };
+    if (typeof query.lastName === 'string') {
+      where.lastName = { contains: query.lastName, mode: 'insensitive' };
     }
-
-    if (query.firstName) {
-      where.firstName = { [Op.iLike]: `%${query.firstName}%` };
-    }
-
-    if (query.lastName) {
-      where.lastName = { [Op.iLike]: `%${query.lastName}%` };
-    }
-
-    if (query.title) {
-      where.title = { [Op.eq]: `%${query.title}` };
-    }
-
+    if (typeof query.title === 'string') where.title = query.title;
+    if (Array.isArray(query.title)) where.title = { in: query.title };
     if (query.skills) {
-      where.skills = {
-        [Op.overlap]: Array.isArray(query.skills)
-          ? (query.skills as string[])
-          : ([query.skills] as string[]),
-      };
+      if ('overlaps' in query.skills && query.skills.overlaps) {
+        where.skills = { hasSome: query.skills.overlaps };
+      } else if ('contains' in query.skills && query.skills.contains) {
+        where.skills = { hasEvery: query.skills.contains };
+      } else if ('any' in query.skills && query.skills.any) {
+        where.skills = { has: query.skills.any };
+      } else if ('all' in query.skills && query.skills.all) {
+        where.skills = { hasEvery: query.skills.all };
+      }
     }
-
-    if (typeof query.isEmployed === 'boolean') {
-      where.isEmployed = { [Op.eq]: query.isEmployed };
-    }
-
-    if (query.userId) {
-      where.userId = { [Op.eq]: query.userId };
-    }
+    if (typeof query.isEmployed === 'boolean') where.isEmployed = query.isEmployed;
 
     return where;
   };
 
-  /**
-   * Gets Sequelize options including transaction if available
-   * @private
-   * @returns {object} Sequelize options object
-   */
-  private getOptions() {
-    return this.transaction ? { transaction: this.transaction } : {};
+  public withTransaction(
+    transaction: Prisma.TransactionClient,
+  ): ICandidateRepository {
+    return new CandidateRepository(transaction);
   }
 
-  /**
-   * Private constructor for singleton pattern
-   * @private
-   */
-  private constructor() {
-    this.candidateModel = CandidateModel;
-  }
-
-  /**
-   * Returns a new repository instance bound to the given transaction.
-   * @param {Transaction} t - The Sequelize transaction to use
-   * @returns {ICandidateRepository} Repository instance using the transaction
-   */
-  public withTransaction(t: Transaction): ICandidateRepository {
-    const repo = new CandidateRepository();
-    repo.transaction = t;
-    return repo;
-  }
-
-  /**
-   * Gets singleton repository instance
-   * @static
-   * @returns {CandidateRepository} The repository instance
-   */
   public static getInstance(): CandidateRepository {
     if (!CandidateRepository.instance) {
       CandidateRepository.instance = new CandidateRepository();
@@ -114,84 +67,33 @@ class CandidateRepository implements ICandidateRepository {
     return CandidateRepository.instance;
   }
 
-  /**
-   * Creates a new candidate record
-   * @param {ICandidate} candidate - Candidate data without id
-   * @param {Transaction} [transaction] - Optional transaction
-   * @returns {Promise<ICandidate>} The created candidate DTO
-   * @throws {RepositoryError} If creation fails
-   * @example
-   * await candidateRepository.create({ firstName: 'John', ... });
-   */
-  public async create(
-    candidate: ICandidate,
-    transaction?: Transaction,
-  ): Promise<ICandidate> {
-    const t = transaction || (await sequelize.transaction());
-    const isLocalTransaction = !transaction;
-
+  public async create(candidate: ICandidate): Promise<ICandidate> {
     try {
-      const newCandidate = await this.candidateModel.create(candidate, {
-        ...this.getOptions(),
-        transaction: t,
+      const newCandidate = await this.client.candidate.create({
+        data: candidate as Prisma.CandidateUncheckedCreateInput,
+        include: { user: { select: userSelectWithoutPassword } },
       });
 
-      if (isLocalTransaction) {
-        await t.commit();
-      }
-
-      return toICandidateDTO(newCandidate);
+      return toICandidateDTO(newCandidate as unknown as ICandidate);
     } catch (error) {
-      if (isLocalTransaction) {
-        await t.rollback();
-      }
       throw new RepositoryError('Failed to create candidate', error);
     }
   }
 
-  /**
-   * Retrieves a single candidate by query criteria
-   * @param {ICandidateQuery} query - Search criteria
-   * @returns {Promise<ICandidate | null>} Candidate DTO if found, null otherwise
-   * @throws {RepositoryError} If query fails
-   * @example
-   * // Find by skills
-   * await candidateRepository.read({ skills: ['JavaScript'] });
-   */
   public async read(query: ICandidateQuery): Promise<ICandidate | null> {
     try {
-      const candidate = await this.candidateModel.findOne({
+      const candidate = await this.client.candidate.findFirst({
         where: this.buildWhereClause(query),
-        include: [
-          {
-            model: UserModel,
-            as: 'user',
-            attributes: {
-              exclude: ['password'],
-            },
-          },
-        ],
-        ...this.getOptions(),
+        include: { user: { select: userSelectWithoutPassword } },
       });
-      return candidate ? toICandidateDTO(candidate) : null;
+      return candidate
+        ? toICandidateDTO(candidate as unknown as ICandidate)
+        : null;
     } catch (error) {
       throw new RepositoryError('Failed to retrieve candidate', error);
     }
   }
 
-  /**
-   * Retrieves paginated list of candidates matching query criteria
-   * @param {ICandidateQuery} query - Filter criteria
-   * @param {IPaginationQueryOptions} options - Pagination configuration
-   * @returns {Promise<PaginatedCandidateResponse>} Paginated candidate results
-   * @throws {RepositoryError} If query fails
-   * @example
-   * // Get first page of employed candidates
-   * await candidateRepository.readAll(
-   *   { isEmployed: true },
-   *   { page: 1, limit: 10 }
-   * );
-   */
   public readAll = async (
     query: ICandidateQuery,
     options: IPaginationQueryOptions,
@@ -203,27 +105,24 @@ class CandidateRepository implements ICandidateRepository {
     perPage: number;
   }> => {
     const pagination = new Pagination(options);
+    const where = this.buildWhereClause(query);
 
     try {
-      const { rows, count } = await this.candidateModel.findAndCountAll({
-        where: this.buildWhereClause(query),
-        include: [
-          {
-            model: UserModel,
-            as: 'user',
-            attributes: {
-              exclude: ['password'],
-            },
-          },
-        ],
-        offset: pagination.getOffset(),
-        limit: pagination.limit,
-        order: pagination.getOrder(),
-        ...this.getOptions(),
-      });
+      const [candidates, count] = await Promise.all([
+        this.client.candidate.findMany({
+          where,
+          include: { user: { select: userSelectWithoutPassword } },
+          skip: pagination.getOffset(),
+          take: pagination.limit,
+          orderBy: getPrismaOrderBy(pagination.sort),
+        }),
+        this.client.candidate.count({ where }),
+      ]);
 
       return {
-        candidates: rows.map(toICandidateDTO),
+        candidates: candidates.map(candidate =>
+          toICandidateDTO(candidate as unknown as ICandidate),
+        ),
         total: count,
         totalPages: pagination.getTotalPages(count),
         currentPage: pagination.page,
@@ -234,77 +133,39 @@ class CandidateRepository implements ICandidateRepository {
     }
   };
 
-  /**
-   * Updates a candidate by ID
-   * @param {string} userId - Candidate User ID to update
-   * @param {Partial<ICandidate>} data - Data to update
-   * @param {Transaction} [transaction] - Optional transaction
-   * @returns {Promise<ICandidate | null>} Updated candidate DTO if found, null otherwise
-   * @throws {RepositoryError} If update fails
-   */
   public async update(
     userId: string,
     data: Partial<ICandidate>,
-    transaction?: Transaction,
   ): Promise<ICandidate | null> {
-    const t = transaction || (await sequelize.transaction());
-    const isLocalTransaction = !transaction;
-
     try {
-      const [affectedRows] = await this.candidateModel.update(data, {
-        where: this.buildWhereClause({ userId }),
-        transaction: t,
-        individualHooks: true,
+      const updatedCandidate = await this.client.candidate.update({
+        where: { userId },
+        data: data as Prisma.CandidateUncheckedUpdateInput,
+        include: { user: { select: userSelectWithoutPassword } },
       });
 
-      if (affectedRows > 0) {
-        const updatedCandidate = await this.read({ userId });
-        if (isLocalTransaction) {
-          await t.commit();
-        }
-        return updatedCandidate;
-      }
-
-      if (isLocalTransaction) {
-        await t.rollback();
-      }
-      return null;
+      return toICandidateDTO(updatedCandidate as unknown as ICandidate);
     } catch (error) {
-      if (isLocalTransaction) {
-        await t.rollback();
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        return null;
       }
       throw new RepositoryError('Failed to update candidate', error);
     }
   }
 
-  /**
-   * Deletes a candidate by ID
-   * @param {string} userId - Candidate User ID to delete
-   * @param {Transaction} [transaction] - Optional transaction
-   * @returns {Promise<boolean>} True if deletion succeeded, false otherwise
-   * @throws {RepositoryError} If deletion fails
-   */
-  public async delete(
-    userId: string,
-    transaction?: Transaction,
-  ): Promise<boolean> {
-    const t = transaction || (await sequelize.transaction());
-    const isLocalTransaction = !transaction;
-
+  public async delete(userId: string): Promise<boolean> {
     try {
-      const deletedRows = await this.candidateModel.destroy({
-        where: this.buildWhereClause({ userId }),
-        transaction: t,
-      });
-
-      if (isLocalTransaction) {
-        await t.commit();
-      }
-
-      return deletedRows > 0;
+      await this.client.candidate.delete({ where: { userId } });
+      return true;
     } catch (error) {
-      if (isLocalTransaction) {
-        await t.rollback();
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        return false;
       }
       throw new RepositoryError('Failed to delete candidate', error);
     }

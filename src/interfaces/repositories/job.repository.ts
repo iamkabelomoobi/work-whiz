@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Prisma } from '@prisma/client';
 import {
   IJob,
   IJobQuery,
@@ -7,7 +7,7 @@ import {
 
 export interface IJobRepository {
   create(job: Omit<IJob, 'id'>): Promise<IJob | null>;
-  read(query: IJobQuery): Promise<IJob>;
+  read(query: IJobQuery): Promise<IJob | null>;
   readAll(
     query: IJobQuery,
     options: IPaginationQueryOptions,
@@ -21,5 +21,5 @@ export interface IJobRepository {
   update(id: string, data: Partial<IJob>): Promise<IJob>;
   delete(id: string): Promise<boolean>;
 
-  withTransaction(t: Transaction): IJobRepository;
+  withTransaction(t: Prisma.TransactionClient): IJobRepository;
 }
