@@ -54,6 +54,8 @@ export interface IConfig {
       password: string;
       /** The host address of the PostgreSQL database */
       host: string;
+      /** The port number of the PostgreSQL database */
+      port: number;
     };
     redis: {
       /** The host address of the Redis instance */

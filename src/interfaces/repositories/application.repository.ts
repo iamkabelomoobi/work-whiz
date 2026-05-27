@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Prisma } from '@prisma/client';
 import {
   IApplication,
   IApplicationQuery,
@@ -19,5 +19,5 @@ export interface IApplicationRepository {
   ): Promise<IApplication>;
   delete(applicationId: string): Promise<boolean>;
 
-  withTransaction(t: Transaction): IApplicationRepository;
+  withTransaction(t: Prisma.TransactionClient): IApplicationRepository;
 }

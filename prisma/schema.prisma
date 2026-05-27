@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  admin
+  candidate
+  employer
+}
+
+enum Title {
+  Mr
+  Mrs
+  Ms
+  Dr
+  Prof
+}
+
+enum JobType {
+  full_time  @map("Full-time")
+  part_time  @map("Part-time")
+  contract   @map("Contract")
+  internship @map("Internship")
+}
+
+enum ApplicationStatus {
+  pending
+  accepted
+  rejected
+}
+
+model User {
+  id         String     @id @default(uuid()) @db.Uuid
+  avatarUrl  String?    @db.VarChar(512)
+  email      String     @unique @db.VarChar(255)
+  phone      String     @unique @db.VarChar(20)
+  password   String?    @db.VarChar(255)
+  role       Role       @default(candidate)
+  isVerified Boolean    @default(false)
+  isActive   Boolean    @default(true)
+  isLocked   Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  admin      Admin?
+  candidate  Candidate?
+  employer   Employer?
+
+  @@map("Users")
+}
+
+model Admin {
+  id          String   @id @default(uuid()) @db.Uuid
+  firstName   String
+  lastName    String
+  permissions String[] @default(["READ"])
+  userId      String   @unique @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("Admins")
+}
+
+model Candidate {
+  id           String        @id @default(uuid()) @db.Uuid
+  firstName    String
+  lastName     String
+  title        Title?
+  skills       String[]      @default([])
+  isEmployed   Boolean?      @default(false)
+  userId       String        @unique @db.Uuid
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  applications Application[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("Candidates")
+}
+
+model Employer {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  industry    String
+  websiteUrl  String?
+  location    String?
+  description String?
+  size        Int?
+  foundedIn   Int?
+  isVerified  Boolean  @default(false)
+  userId      String   @unique @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  jobs        Job[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("Employers")
+}
+
+model Job {
+  id               String        @id @default(uuid()) @db.Uuid
+  title            String
+  description      String
+  responsibilities String[]
+  requirements     String[]
+  benefits         String[]
+  location         String
+  type             JobType       @default(full_time)
+  vacancy          Int?
+  deadline         DateTime
+  tags             String[]
+  employerId       String        @db.Uuid
+  employer         Employer      @relation(fields: [employerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  views            Int?          @default(0)
+  isPublic         Boolean?      @default(true)
+  applications     Application[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@map("Jobs")
+}
+
+model Application {
+  id          String            @id @default(uuid()) @db.Uuid
+  jobId       String            @db.Uuid
+  candidateId String            @db.Uuid
+  status      ApplicationStatus @default(pending)
+  coverLetter String?
+  resumeUrl   String?
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  candidate   Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([id, jobId, candidateId, status, createdAt, updatedAt], name: "application_search_index")
+  @@map("Applications")
+}

@@ -170,7 +170,6 @@ export class AuthenticationRoutes {
         .post(
           '/verify-account',
           verifyAccountLimiter,
-          authorizationMiddleware.authorizeVerifyAccount,
           authenticationController.verifyAccount,
         )
 

@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Prisma } from '@prisma/client';
 import { IUser, IUserQuery } from '@work-whiz/interfaces';
 
 export interface IUserRepository {
@@ -21,5 +21,5 @@ export interface IUserRepository {
   update(id: string, data: Partial<IUser>): Promise<IUser>;
   delete(id: string): Promise<boolean>;
 
-  withTransaction(t: Transaction): IUserRepository;
+  withTransaction(t: Prisma.TransactionClient): IUserRepository;
 }

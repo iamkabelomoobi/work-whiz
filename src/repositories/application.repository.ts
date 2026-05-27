@@ -1,9 +1,7 @@
-import { Op, WhereOptions, Transaction } from 'sequelize';
-
-import { sequelize } from '@work-whiz/libs';
+import { JobType, Prisma } from '@prisma/client';
+import { prisma } from '@work-whiz/libs';
 import { toApplicationDTO } from '@work-whiz/dtos';
 import { RepositoryError } from '@work-whiz/errors';
-import { ApplicationModel, CandidateModel, JobModel } from '@work-whiz/models';
 import {
   IApplication,
   IApplicationQuery,
@@ -12,39 +10,60 @@ import {
 } from '@work-whiz/interfaces';
 import { IApplicationRepository } from '@work-whiz/interfaces/repositories';
 import { Pagination } from '@work-whiz/utils';
+import { PrismaRepositoryClient } from './prisma.repository';
 
 class ApplicationRepository implements IApplicationRepository {
   private static instance: ApplicationRepository;
-  protected applicationModel: typeof ApplicationModel;
-  private transaction: Transaction | null = null;
+  private client: PrismaRepositoryClient;
 
-  private buildWhereClause = (query: IApplicationQuery): WhereOptions => {
-    const where: WhereOptions = {};
+  private constructor(client: PrismaRepositoryClient = prisma) {
+    this.client = client;
+  }
 
-    if (query.id) {
-      where.id = { [Op.eq]: query.id };
-    }
-    if (query.jobId) {
-      where.jobId = { [Op.eq]: query.jobId };
-    }
-    if (query.candidateId) {
-      where.candidateId = { [Op.eq]: query.candidateId };
-    }
-    if (query.createdAt) {
-      where.createdAt = { [Op.eq]: query.createdAt };
-    }
-    if (query.updatedAt) {
-      where.updatedAt = { [Op.eq]: query.updatedAt };
-    }
+  private buildWhereClause = (
+    query: IApplicationQuery,
+  ): Prisma.ApplicationWhereInput => {
+    const where: Prisma.ApplicationWhereInput = {};
+
+    if (query.id) where.id = query.id;
+    if (query.jobId) where.jobId = query.jobId;
+    if (query.candidateId) where.candidateId = query.candidateId;
+    if (query.status) where.status = query.status;
+    if (query.createdAt) where.createdAt = new Date(query.createdAt);
+    if (query.updatedAt) where.updatedAt = new Date(query.updatedAt);
 
     return where;
   };
 
-  private getOptions = () =>
-    this.transaction ? { transaction: this.transaction } : {};
+  private readonly includeRelations = {
+    job: true,
+    candidate: true,
+  } as const;
 
-  private constructor() {
-    this.applicationModel = ApplicationModel;
+  private toDtoInput(application: unknown): IApplication {
+    const dtoApplication = application as IApplication & {
+      job?: IApplication['job'] & { type?: JobType };
+    };
+    const jobTypeMap: Record<JobType, NonNullable<IApplication['job']>['type']> = {
+      full_time: 'Full-time',
+      part_time: 'Part-time',
+      contract: 'Contract',
+      internship: 'Internship',
+    };
+
+    return {
+      ...dtoApplication,
+      job: dtoApplication.job
+        ? {
+            ...dtoApplication.job,
+            type:
+              dtoApplication.job.type &&
+              dtoApplication.job.type in jobTypeMap
+                ? jobTypeMap[dtoApplication.job.type as JobType]
+                : dtoApplication.job.type,
+          }
+        : null,
+    };
   }
 
   public static getInstance(): ApplicationRepository {
@@ -54,37 +73,22 @@ class ApplicationRepository implements IApplicationRepository {
     return ApplicationRepository.instance;
   }
 
-  public withTransaction(transaction: Transaction): IApplicationRepository {
-    const repository = new ApplicationRepository();
-    repository.applicationModel = this.applicationModel;
-    repository.transaction = transaction;
-    return repository;
+  public withTransaction(
+    transaction: Prisma.TransactionClient,
+  ): IApplicationRepository {
+    return new ApplicationRepository(transaction);
   }
 
   public async create(
     application: Omit<IApplication, 'id'>,
   ): Promise<IApplication> {
     try {
-      const newApplication = await this.applicationModel.create(application, {
-        ...this.getOptions(),
-        include: [
-          {
-            model: JobModel,
-            as: 'job',
-            required: true,
-            include: [
-              {
-                model: CandidateModel,
-                as: 'candidate',
-                required: true,
-                attributes: ['id', 'firstName', 'lastName'],
-              },
-            ],
-          },
-        ],
+      const newApplication = await this.client.application.create({
+        data: application as Prisma.ApplicationUncheckedCreateInput,
+        include: this.includeRelations,
       });
 
-      return toApplicationDTO(newApplication.get({ plain: true }));
+      return toApplicationDTO(this.toDtoInput(newApplication));
     } catch (error) {
       throw new RepositoryError('Failed to create application', error);
     }
@@ -92,29 +96,12 @@ class ApplicationRepository implements IApplicationRepository {
 
   public async read(applicationId: string): Promise<IApplication | null> {
     try {
-      const application = await this.applicationModel.findOne({
-        where: this.buildWhereClause({ id: applicationId }),
-        ...this.getOptions(),
-        include: [
-          {
-            model: JobModel,
-            as: 'job',
-            required: true,
-            include: [
-              {
-                model: CandidateModel,
-                as: 'candidate',
-                required: true,
-                attributes: ['id', 'firstName', 'lastName'],
-              },
-            ],
-          },
-        ],
+      const application = await this.client.application.findUnique({
+        where: { id: applicationId },
+        include: this.includeRelations,
       });
 
-      return toApplicationDTO(
-        application ? application.get({ plain: true }) : null,
-      );
+      return application ? toApplicationDTO(this.toDtoInput(application)) : null;
     } catch (error) {
       throw new RepositoryError('Failed to read application', error);
     }
@@ -125,36 +112,23 @@ class ApplicationRepository implements IApplicationRepository {
     pagination: IPaginationQueryOptions,
   ): Promise<IPaginatedApplications> {
     const paginationObj = new Pagination(pagination);
-    try {
-      const { rows, count } = await this.applicationModel.findAndCountAll({
-        where: this.buildWhereClause(query),
-        distinct: true,
-        col: 'id',
-        limit: pagination.limit,
-        ...this.getOptions(),
-        include: [
-          {
-            model: JobModel,
-            as: 'job',
-            required: true,
-            include: [
-              {
-                model: CandidateModel,
-                as: 'candidate',
-                required: true,
-                attributes: ['id', 'firstName', 'lastName'],
-              },
-            ],
-          },
-        ],
-      });
+    const where = this.buildWhereClause(query);
 
-      const applications = rows.map(application =>
-        toApplicationDTO(application.get({ plain: true })),
-      );
+    try {
+      const [applications, count] = await Promise.all([
+        this.client.application.findMany({
+          where,
+          include: this.includeRelations,
+          skip: paginationObj.getOffset(),
+          take: paginationObj.limit,
+        }),
+        this.client.application.count({ where }),
+      ]);
 
       return {
-        applications,
+        applications: applications.map(application =>
+          toApplicationDTO(this.toDtoInput(application)),
+        ),
         total: count,
         page: paginationObj.page,
       };
@@ -168,18 +142,13 @@ class ApplicationRepository implements IApplicationRepository {
     application: Partial<IApplication>,
   ): Promise<IApplication> {
     try {
-      const [affectedRows, [updatedApplication]] =
-        await this.applicationModel.update(application, {
-          where: this.buildWhereClause({ id: applicationId }),
-          returning: true,
-          ...this.getOptions(),
-        });
+      const updatedApplication = await this.client.application.update({
+        where: { id: applicationId },
+        data: application as Prisma.ApplicationUncheckedUpdateInput,
+        include: this.includeRelations,
+      });
 
-      if (affectedRows === 0 || !updatedApplication) {
-        throw new RepositoryError('Application not found');
-      }
-
-      return toApplicationDTO(updatedApplication.get({ plain: true }));
+      return toApplicationDTO(this.toDtoInput(updatedApplication));
     } catch (error) {
       throw new RepositoryError('Failed to update application', error);
     }
@@ -187,34 +156,28 @@ class ApplicationRepository implements IApplicationRepository {
 
   public async delete(applicationId: string): Promise<boolean> {
     try {
-      const deletedRows = await this.applicationModel.destroy({
-        where: this.buildWhereClause({ id: applicationId }),
-        ...this.getOptions(),
-      });
-
-      return deletedRows > 0;
+      await this.client.application.delete({ where: { id: applicationId } });
+      return true;
     } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        return false;
+      }
       throw new RepositoryError('Failed to delete application', error);
     }
   }
 
   public async executeInTransaction<T>(
-    work: (t: Transaction) => Promise<T>,
-    existingTransaction?: Transaction,
+    work: (t: Prisma.TransactionClient) => Promise<T>,
+    existingTransaction?: Prisma.TransactionClient,
   ): Promise<T> {
     if (existingTransaction) {
       return work(existingTransaction);
     }
 
-    const transaction = await sequelize.transaction();
-    try {
-      const result = await work(transaction);
-      await transaction.commit();
-      return result;
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
+    return prisma.$transaction(work);
   }
 }
 

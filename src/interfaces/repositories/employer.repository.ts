@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Prisma } from '@prisma/client';
 import {
   IEmployer,
   IEmployerQuery,
@@ -14,5 +14,5 @@ export interface IEmployerRepository {
   ): Promise<{ employers: IEmployer[]; total: number }>;
   update(id: string, data: Partial<IEmployer>): Promise<IEmployer | null>;
 
-  withTransaction(t: Transaction): IEmployerRepository;
+  withTransaction(t: Prisma.TransactionClient): IEmployerRepository;
 }

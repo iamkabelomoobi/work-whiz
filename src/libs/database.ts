@@ -1,40 +1,25 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Redis } from 'ioredis';
-import { Sequelize, Dialect } from 'sequelize';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
 import { config } from '@work-whiz/configs/config';
 
 class DatabaseLib {
   private static instance: DatabaseLib;
 
   private constructor() {
-    // Private constructor to prevent instantiation
+    // Private constructor to prevent instantiation.
   }
 
-  public sequelizeConnect = (): Sequelize => {
-    return new Sequelize(
-      config?.database?.postgres?.databaseName,
-      config?.database?.postgres?.username,
-      config?.database?.postgres?.password,
-      {
-        host: config?.database?.postgres?.host,
-        dialect: 'postgres' as Dialect,
-        protocol: 'postgres',
-        pool: {
-          max: 5,
-          acquire: 30000,
-          idle: 10000,
-        },
-        logging: false,
-      },
-    );
-  };
+  public prismaClient(): PrismaClient {
+    const databaseUrl =
+      process.env.DATABASE_URL ||
+      `postgresql://${config?.database?.postgres?.username}:${config?.database?.postgres?.password}@${config?.database?.postgres?.host}:${config?.database?.postgres?.port || 5432}/${config?.database?.postgres?.databaseName}`;
 
-  /**
-   * Get the singleton instance of DatabaseLib.
-   * @returns {DatabaseLib} The singleton instance.
-   * @public
-   */
+    return new PrismaClient({
+      adapter: new PrismaPg({ connectionString: databaseUrl }),
+    });
+  }
+
   public static getInstance(): DatabaseLib {
     if (!DatabaseLib.instance) {
       DatabaseLib.instance = new DatabaseLib();
@@ -42,11 +27,6 @@ class DatabaseLib {
     return DatabaseLib.instance;
   }
 
-  /**
-   * Connect to Redis.
-   * @returns {Redis} The Redis client.
-   * @public
-   */
   public redisClient(): Redis {
     return new Redis({
       host: config?.database?.redis?.host,
@@ -57,7 +37,7 @@ class DatabaseLib {
 }
 
 const dbInstance = DatabaseLib.getInstance();
-const sequelize: Sequelize = dbInstance.sequelizeConnect();
+const prisma: PrismaClient = dbInstance.prismaClient();
 const redis: Redis = dbInstance.redisClient();
 
-export { sequelize, redis };
+export { prisma, redis };

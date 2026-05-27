@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Prisma } from '@prisma/client';
 import { IAdmin, IAdminQuery } from '@work-whiz/interfaces';
 
 export interface IAdminRepository {
@@ -14,5 +14,5 @@ export interface IAdminRepository {
   ): Promise<{ admins: IAdmin[]; total: number }>;
   update(id: string, data: Partial<IAdmin>): Promise<IAdmin | null>;
 
-  withTransaction(t: Transaction): IAdminRepository;
+  withTransaction(t: Prisma.TransactionClient): IAdminRepository;
 }

@@ -1,41 +1,93 @@
-version: "3.8"
-
 services:
-  mailhog:
-    image: mailhog/mailhog
-    container_name: work-whiz-mailhog
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:13}
+    container_name: ${POSTGRES_CONTAINER_DEV:-work-whiz-postgres-dev}
     restart: unless-stopped
-    env_file:
-      - .env
     ports:
-      - "1025:1025" # SMTP
-      - "8025:8025" # Web UI
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DATABASE_NAME:-work_whiz}
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME:-postgres} -d ${POSTGRES_DATABASE_NAME:-work_whiz}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
-    image: redis:7-alpine
-    container_name: work-whiz-redis
+    image: ${REDIS_IMAGE:-redis:7-alpine}
+    container_name: ${REDIS_CONTAINER_DEV:-work-whiz-redis-dev}
     restart: unless-stopped
     ports:
-      - "6379:6379"
-    depends_on:
-      - mailhog
-
-  db:
-    image: postgres:13
-    container_name: work-whiz-db
-    restart: always
-    env_file:
-      - .env
-    environment:
-      POSTGRES_USER: ${POSTGRES_USERNAME}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DATABASE_NAME}
-    ports:
-      - "5432:5432"
+      - "${REDIS_HOST_PORT:-6380}:6379"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - redis_data_dev:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: ${MAILHOG_IMAGE:-mailhog/mailhog}
+    container_name: ${MAILHOG_CONTAINER_DEV:-work-whiz-mailhog-dev}
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_SMTP_HOST_PORT:-1026}:1025"
+      - "${MAILHOG_WEB_HOST_PORT:-8026}:8025"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8025"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  elasticsearch:
+    image: ${ELASTICSEARCH_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:8.15.3}
+    container_name: ${ELASTICSEARCH_CONTAINER_DEV:-estate-grid-elasticsearch-dev}
+    restart: unless-stopped
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data_dev:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+
+  kibana:
+    image: ${KIBANA_IMAGE:-docker.elastic.co/kibana/kibana:8.15.3}
+    container_name: ${KIBANA_CONTAINER_DEV:-estate-grid-kibana-dev}
+    restart: unless-stopped
+    ports:
+      - "${KIBANA_PORT:-5601}:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     depends_on:
-      - redis
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
 
 volumes:
-  db_data:
+  postgres_data_dev:
+    name: ${POSTGRES_VOLUME_DEV:-work-whiz-postgres-data-dev}
+  elasticsearch_data_dev:
+    name: ${ELASTICSEARCH_VOLUME_DEV:-work-whiz-elasticsearch-data-dev}
+  redis_data_dev:
+    name: ${REDIS_VOLUME_DEV:-work-whiz-redis-data-dev}
+
+networks:
+  default:
+    name: ${APP_NETWORK:-work-whiz-network}
