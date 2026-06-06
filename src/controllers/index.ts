@@ -2,8 +2,6 @@ export { adminController } from './admin.controller';
 
 export { applicationController } from './application.controller';
 
-export { authenticationController } from './authentication.controller';
-
 export { employerController } from './employer.controller';
 
 export { jobController } from './job.controller';

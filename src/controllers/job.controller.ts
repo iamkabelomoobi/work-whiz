@@ -120,7 +120,7 @@ class JobController {
   public readJob = async (req: Request, res: Response): Promise<void> => {
     try {
       const { jobId } = req.params;
-      if (!jobId) {
+      if (typeof jobId !== 'string' || !jobId) {
         responseUtil.sendError(res, {
           message: 'Job ID is required',
           statusCode: StatusCodes.BAD_REQUEST,
@@ -170,7 +170,7 @@ class JobController {
     try {
       const { jobId } = req.params;
       const data = req.body as Omit<IJob, 'id'>;
-      if (!jobId) {
+      if (typeof jobId !== 'string' || !jobId) {
         responseUtil.sendError(res, {
           message: 'Job ID is required',
           statusCode: StatusCodes.BAD_REQUEST,
@@ -206,7 +206,7 @@ class JobController {
   public deleteJob = async (req: Request, res: Response): Promise<void> => {
     try {
       const { jobId } = req.params;
-      if (!jobId) {
+      if (typeof jobId !== 'string' || !jobId) {
         responseUtil.sendError(res, {
           message: 'Job ID is required',
           statusCode: StatusCodes.BAD_REQUEST,

@@ -8,7 +8,6 @@ interface StringSearch {
 interface IEmployerQuery {
   id?: string;
   userId?: string;
-  name?: string | StringSearch;
   industry?: string | string[];
   location?: string | StringSearch;
   size?: string | string[];
@@ -31,7 +30,7 @@ interface IEmployerQuery {
         after?: Date;
         between?: [Date, Date];
       };
-  orderBy?: 'name' | 'size' | 'createdAt';
+  orderBy?: 'size' | 'createdAt';
   orderDirection?: 'ASC' | 'DESC';
 }
 

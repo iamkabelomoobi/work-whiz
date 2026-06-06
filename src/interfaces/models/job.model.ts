@@ -13,7 +13,8 @@ export interface IJob {
   tags: string[];
   employerId?: string;
   employer?: Partial<IEmployer> & {
-    avatarUrl?: string;
+    name?: string;
+    image?: string;
     email?: string;
     phone?: string;
   };

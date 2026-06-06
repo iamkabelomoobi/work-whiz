@@ -13,11 +13,11 @@ export const toIJobDTO = (job: IJob): IJob => {
     vacancy: job.vacancy,
     deadline: job.deadline,
     tags: job.tags,
-    employer: job.employer
+    employer: job.employer?.user
       ? {
           id: job.employer.id,
-          avatarUrl: job.employer.user.avatarUrl,
-          name: job.employer.name,
+          image: job.employer.user.image,
+          name: job.employer.user.name,
           email: job.employer.user.email,
           phone: job.employer.user.phone,
           industry: job.employer.industry,
@@ -27,7 +27,7 @@ export const toIJobDTO = (job: IJob): IJob => {
           foundedIn: job.employer.foundedIn,
           isVerified: job.employer.isVerified,
         }
-      : null,
+      : undefined,
     views: job.views,
     isPublic: job.isPublic,
     createdAt: job.createdAt || new Date(),

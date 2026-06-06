@@ -9,10 +9,7 @@ import {
 } from '@work-whiz/interfaces';
 import { RepositoryError } from '@work-whiz/errors';
 import { Pagination } from '@work-whiz/utils';
-import {
-  getPrismaOrderBy,
-  PrismaRepositoryClient,
-} from './prisma.repository';
+import { getPrismaOrderBy, PrismaRepositoryClient } from './prisma.repository';
 
 class UserRepository implements IUserRepository {
   private static instance: UserRepository;
@@ -22,7 +19,9 @@ class UserRepository implements IUserRepository {
     this.client = client;
   }
 
-  private readonly buildWhereClause = (query: IUserQuery): Prisma.UserWhereInput => {
+  private readonly buildWhereClause = (
+    query: IUserQuery,
+  ): Prisma.UserWhereInput => {
     const where: Prisma.UserWhereInput = {};
 
     if (query.id) where.id = query.id;
@@ -30,7 +29,8 @@ class UserRepository implements IUserRepository {
     if (query.phone) where.phone = query.phone;
     if (query.role) where.role = query.role;
     if (typeof query.isActive === 'boolean') where.isActive = query.isActive;
-    if (typeof query.isVerified === 'boolean') where.isVerified = query.isVerified;
+    if (typeof query.isVerified === 'boolean')
+      where.isVerified = query.isVerified;
     if (typeof query.isLocked === 'boolean') where.isLocked = query.isLocked;
 
     return where;
@@ -41,12 +41,16 @@ class UserRepository implements IUserRepository {
 
     return {
       ...dtoUser,
-      avatarUrl: dtoUser.avatarUrl || '',
+      image: dtoUser.image || '',
+      name: dtoUser.name || '',
+      emailVerified: dtoUser.emailVerified || false,
       password: dtoUser.password || '',
     } as IUser;
   };
 
-  public withTransaction(transaction: Prisma.TransactionClient): UserRepository {
+  public withTransaction(
+    transaction: Prisma.TransactionClient,
+  ): UserRepository {
     return new UserRepository(transaction);
   }
 
@@ -69,13 +73,17 @@ class UserRepository implements IUserRepository {
     }
   }
 
-  public async read(query: IUserQuery): Promise<IUser | null> {
+  public async read(query: IUserQuery): Promise<IUser> {
     try {
       const user = await this.client.user.findFirst({
         where: this.buildWhereClause(query),
       });
 
-      return user ? toIUserDTO(this.toDtoInput(user)) : null;
+      if (!user) {
+        throw new RepositoryError('User not found');
+      }
+
+      return toIUserDTO(this.toDtoInput(user));
     } catch (error) {
       throw new RepositoryError('Failed to retrieve user', error);
     }
@@ -106,9 +114,7 @@ class UserRepository implements IUserRepository {
       ]);
 
       return {
-        users: users.map(user =>
-          toIUserDTO(this.toDtoInput(user)),
-        ),
+        users: users.map(user => toIUserDTO(this.toDtoInput(user))),
         total: count,
         totalPages: pagination.getTotalPages(count),
         currentPage: pagination.page,
@@ -119,7 +125,7 @@ class UserRepository implements IUserRepository {
     }
   }
 
-  public async update(id: string, data: Partial<IUser>): Promise<IUser | null> {
+  public async update(id: string, data: Partial<IUser>): Promise<IUser> {
     try {
       const updatedUser = await this.client.user.update({
         where: { id },
@@ -132,7 +138,7 @@ class UserRepository implements IUserRepository {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2025'
       ) {
-        return null;
+        throw new RepositoryError('User not found', error);
       }
       throw new RepositoryError('Failed to update user', error);
     }

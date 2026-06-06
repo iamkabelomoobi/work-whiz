@@ -2,8 +2,10 @@ import { Role } from '@work-whiz/types/roles.type';
 
 interface IUser {
   readonly id: string;
-  avatarUrl: string;
+  name: string;
+  image: string;
   email: string;
+  emailVerified: boolean;
   phone: string;
   password: string;
   role: Role;

@@ -116,7 +116,7 @@ class ApplicationController {
   ): Promise<void> => {
     try {
       const { applicationId } = req.params;
-      if (!applicationId) {
+      if (typeof applicationId !== 'string' || !applicationId) {
         responseUtil.sendError(res, {
           message: 'Application ID is required',
           statusCode: StatusCodes.BAD_REQUEST,
@@ -177,7 +177,7 @@ class ApplicationController {
     try {
       const { applicationId } = req.params;
       const data = req.body as Partial<IApplication>;
-      if (!applicationId) {
+      if (typeof applicationId !== 'string' || !applicationId) {
         responseUtil.sendError(res, {
           message: 'Application ID is required',
           statusCode: StatusCodes.BAD_REQUEST,
@@ -212,7 +212,7 @@ class ApplicationController {
   ): Promise<void> => {
     try {
       const { applicationId } = req.params;
-      if (!applicationId) {
+      if (typeof applicationId !== 'string' || !applicationId) {
         responseUtil.sendError(res, {
           message: 'Application ID is required',
           statusCode: StatusCodes.BAD_REQUEST,

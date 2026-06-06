@@ -1,9 +1,9 @@
-import { getUserRole } from '@work-whiz/utils';
+import { getUserRole } from '@work-whiz/utils/getUserRole.util';
 import { Request } from 'express';
 import { Role } from '@work-whiz/types';
 
 describe('getUserRole', () => {
-  const createMockRequest = (host?: string): Partial<Request> => ({
+  const createMockRequest = (host?: string | null): Partial<Request> => ({
     get: jest.fn().mockReturnValue(host),
   });
 

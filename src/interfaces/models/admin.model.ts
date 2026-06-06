@@ -3,8 +3,6 @@ import { IUser } from './user.model';
 
 interface IAdmin {
   readonly id: string;
-  firstName?: string;
-  lastName?: string;
   permissions?: Array<Permissions>;
   userId?: string;
   user?: Partial<IUser>;

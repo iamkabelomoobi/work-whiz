@@ -22,8 +22,6 @@ interface DateRange {
 interface ICandidateQuery {
   id?: string;
   userId?: string;
-  firstName?: string | StringSearch;
-  lastName?: string | StringSearch;
   title?: (typeof TITLE_ENUM)[number] | Array<(typeof TITLE_ENUM)[number]>;
   skills?: ArraySearch<string>;
   isEmployed?: boolean;

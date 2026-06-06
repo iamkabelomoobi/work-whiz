@@ -155,42 +155,6 @@ export class CandidateRoutes {
 
     /**
      * @swagger
-     * /api/candidates/me/password:
-     *   patch:
-     *     summary: Update candidate password
-     *     tags: [Candidate]
-     *     security:
-     *       - bearerAuth: []
-     *     requestBody:
-     *       required: true
-     *       content:
-     *         application/json:
-     *           schema:
-     *             type: object
-     *             properties:
-     *               currentPassword:
-     *                 type: string
-     *                 example: "currentpassword123"
-     *               newPassword:
-     *                 type: string
-     *                 example: "newpassword123"
-     *     responses:
-     *       200:
-     *         description: Password updated successfully
-     *       400:
-     *         description: Validation error
-     *       401:
-     *         description: Unauthorized
-     */
-    this.router.patch(
-      '/me/password',
-      profileLimiter,
-      authorizationMiddleware.isAuthorized(['candidate']),
-      userController.updatePassword,
-    );
-
-    /**
-     * @swagger
      * /api/candidates/me:
      *   delete:
      *     summary: Delete current candidate account

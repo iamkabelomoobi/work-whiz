@@ -45,6 +45,7 @@ class ApplicationService extends BaseService implements IApplicationService {
   }
 
   private async cacheSingleApplication(app: IApplication) {
+    if (!app.id) return;
     const cacheKey = this.generateCacheKey(app.id);
     await cacheUtil.set(cacheKey, app, this.CACHE_TTL.SINGLE_APPLICATION);
   }
@@ -98,7 +99,7 @@ class ApplicationService extends BaseService implements IApplicationService {
         status: newApplication.status,
         jobTitle: newApplication.job?.title,
         candidate: {
-          firstName: candidate?.firstName,
+          name: candidate?.user?.name,
           email: candidate?.user?.email,
         },
       };
@@ -219,7 +220,7 @@ class ApplicationService extends BaseService implements IApplicationService {
         status: updatedApplication.status,
         jobTitle: updatedApplication.job?.title,
         candidate: {
-          firstName: updatedApplication.candidate?.firstName,
+          name: updatedApplication.candidate?.user?.name,
           email: updatedApplication.candidate?.user?.email,
         },
       };

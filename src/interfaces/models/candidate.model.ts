@@ -2,8 +2,6 @@ import { IUser } from './user.model';
 
 interface ICandidate {
   readonly id?: string;
-  firstName?: string;
-  lastName?: string;
   title?: string;
   skills?: Array<string>;
   isEmployed?: boolean;

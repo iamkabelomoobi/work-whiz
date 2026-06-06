@@ -1,7 +1,5 @@
 export { configureMiddlewares } from './app.middleware';
 
-export { authenticationMiddleware } from './authentication.middleware';
-
 export { authorizationMiddleware } from './authorization.middleware';
 
 export {

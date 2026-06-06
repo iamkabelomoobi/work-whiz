@@ -6,10 +6,11 @@
 import { candidateRegisterSchema } from './schemas/candidate-register.schema';
 
 export const candidateRegisterValidator = (data: {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone: string;
+  password: string;
+  title: string;
 }) => {
   const { error } = candidateRegisterSchema.validate(data, {
     abortEarly: false,

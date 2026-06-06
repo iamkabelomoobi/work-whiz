@@ -1,10 +1,16 @@
 import { baseRegisterSchema } from '@work-whiz/validators/schemas/base-register.schema';
 
+const validPayload = {
+  name: 'User Name',
+  email: 'user@example.com',
+  password: 'StrongPass123!',
+  phone: '+254712345678',
+};
+
 describe('baseRegisterSchema', () => {
-  it('should pass validation with valid email and phone', () => {
+  it('should pass validation with valid base registration data', () => {
     const result = baseRegisterSchema.validate({
-      email: 'user@example.com',
-      phone: '+254712345678',
+      ...validPayload,
     });
 
     expect(result.error).toBeUndefined();
@@ -12,7 +18,8 @@ describe('baseRegisterSchema', () => {
 
   it('should fail when email is missing', () => {
     const result = baseRegisterSchema.validate({
-      phone: '+254712345678',
+      ...validPayload,
+      email: undefined,
     });
 
     expect(result.error).toBeDefined();
@@ -21,7 +28,8 @@ describe('baseRegisterSchema', () => {
 
   it('should fail when phone is missing', () => {
     const result = baseRegisterSchema.validate({
-      email: 'user@example.com',
+      ...validPayload,
+      phone: undefined,
     });
 
     expect(result.error).toBeDefined();
@@ -32,8 +40,8 @@ describe('baseRegisterSchema', () => {
 
   it('should fail with invalid email', () => {
     const result = baseRegisterSchema.validate({
+      ...validPayload,
       email: 'invalid-email',
-      phone: '+254712345678',
     });
 
     expect(result.error).toBeDefined();
@@ -44,7 +52,7 @@ describe('baseRegisterSchema', () => {
 
   it('should fail with invalid phone (no country code)', () => {
     const result = baseRegisterSchema.validate({
-      email: 'user@example.com',
+      ...validPayload,
       phone: '0712345678',
     });
 
@@ -60,7 +68,9 @@ describe('baseRegisterSchema', () => {
     expect(result.error).toBeDefined();
     const messages = result.error?.details.map(d => d.message);
 
+    expect(messages).toContain('Name is required');
     expect(messages).toContain('Email is required and cannot be empty.');
     expect(messages).toContain('Phone number is required.');
+    expect(messages).toContain('Password is required.');
   });
 });

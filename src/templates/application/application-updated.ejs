@@ -23,7 +23,7 @@
       "
     >
       <h2 style="color: #f0ad4e">Your application has been updated</h2>
-      <p>Dear <%= application?.candidateName || 'Candidate' %>,</p>
+      <p>Dear <%= application?.candidate?.name || 'Candidate' %>,</p>
       <p>
         Your application for the job
         <strong><%= application?.jobTitle || 'N/A' %></strong>

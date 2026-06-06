@@ -2,6 +2,9 @@
 import { validateJob } from '@work-whiz/validators';
 
 describe('Job Schema Validation', () => {
+  const futureDeadline = new Date();
+  futureDeadline.setFullYear(futureDeadline.getFullYear() + 1);
+
   const validJobData = {
     title: 'Software Engineer',
     description: 'Develop and maintain software applications.',
@@ -11,7 +14,7 @@ describe('Job Schema Validation', () => {
     location: 'Remote',
     type: 'Full-time' as 'Full-time' | 'Part-time' | 'Contract' | 'Internship',
     vacancy: 2,
-    deadline: new Date('2025-12-31T00:00:00.000Z'),
+    deadline: futureDeadline,
     tags: ['Engineering', 'Software', 'TypeScript'],
     isPublic: true,
   };
@@ -23,7 +26,7 @@ describe('Job Schema Validation', () => {
     });
 
     it('should fail if required fields are missing', () => {
-      const invalidData = { ...validJobData };
+      const invalidData: Partial<typeof validJobData> = { ...validJobData };
       delete invalidData.title;
       delete invalidData.description;
 

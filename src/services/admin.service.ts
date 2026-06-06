@@ -43,8 +43,10 @@ class AdminService extends BaseService implements IAdminService {
    */
   public findOne = async (query: IAdminQuery): Promise<IAdmin> =>
     this.handleErrors(async () => {
-      const cacheKey = this.generateCacheKey(query.userId);
-      const cachedAdmin = await cacheUtil.get(cacheKey);
+      const cacheKey = query.userId
+        ? this.generateCacheKey(query.userId)
+        : undefined;
+      const cachedAdmin = cacheKey ? await cacheUtil.get(cacheKey) : null;
 
       if (cachedAdmin) {
         return cachedAdmin as IAdmin;
@@ -59,7 +61,9 @@ class AdminService extends BaseService implements IAdminService {
         });
       }
 
-      await cacheUtil.set(cacheKey, admin, 3600);
+      if (cacheKey) {
+        await cacheUtil.set(cacheKey, admin, 3600);
+      }
       return admin;
     }, this.findOne.name);
 
@@ -79,7 +83,8 @@ class AdminService extends BaseService implements IAdminService {
     pagination: { page: number; limit: number; total: number };
   }> =>
     this.handleErrors(async () => {
-      const payload = await adminRepository.readAll(query, options);
+      const paginationOptions = options ?? { page: 1, limit: 10 };
+      const payload = await adminRepository.readAll(query, paginationOptions);
 
       if (payload.admins.length === 0) {
         throw new ServiceError(StatusCodes.NOT_FOUND, {
@@ -95,7 +100,7 @@ class AdminService extends BaseService implements IAdminService {
         admins: payload.admins,
         pagination: {
           page: payload.currentPage,
-          limit: options.limit ?? 10,
+          limit: paginationOptions.limit,
           total: payload.total,
         },
       };
@@ -133,7 +138,7 @@ class AdminService extends BaseService implements IAdminService {
         });
       }
 
-      const cacheKey = this.generateCacheKey(admin.userId);
+      const cacheKey = this.generateCacheKey(id);
       await cacheUtil.delete(cacheKey);
 
       return { message: 'Admin account updated successfully.' };

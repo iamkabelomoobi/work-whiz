@@ -18,18 +18,20 @@ export class BaseService {
   ): Promise<T> {
     try {
       return await fn();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`[Service Error] ${method}:`, error);
 
       if (error instanceof ServiceError) throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
 
       throw new ServiceError(StatusCodes.INTERNAL_SERVER_ERROR, {
         message: 'An unexpected error occurred.',
         trace: {
           method,
           context: {
-            error: error.message,
-            stack: error.stack,
+            error: errorMessage,
+            stack: errorStack,
           },
         },
       });

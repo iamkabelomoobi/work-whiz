@@ -51,8 +51,10 @@ class CandidateService extends BaseService implements ICandidateService {
     query: ICandidateQuery,
   ): Promise<ICandidate | null> => {
     return this.handleErrors(async () => {
-      const cacheKey = this.generateCacheKey(query.userId);
-      const cachedCandidate = await cacheUtil.get(cacheKey);
+      const cacheKey = query.userId
+        ? this.generateCacheKey(query.userId)
+        : undefined;
+      const cachedCandidate = cacheKey ? await cacheUtil.get(cacheKey) : null;
 
       if (cachedCandidate) {
         return cachedCandidate as ICandidate;
@@ -88,7 +90,11 @@ class CandidateService extends BaseService implements ICandidateService {
     };
   }> => {
     return this.handleErrors(async () => {
-      const payload = await candidateRepository.readAll(query, options);
+      const paginationOptions = options ?? { page: 1, limit: 10 };
+      const payload = await candidateRepository.readAll(
+        query,
+        paginationOptions,
+      );
       if (payload.total === 0) {
         throw new ServiceError(StatusCodes.NOT_FOUND, {
           message: 'No candidates found matching the provided query.',
@@ -129,7 +135,7 @@ class CandidateService extends BaseService implements ICandidateService {
 
       await candidateRepository.update(userId, data);
 
-      const cacheKey = this.generateCacheKey(candidate.userId);
+      const cacheKey = this.generateCacheKey(userId);
 
       await cacheUtil.delete(cacheKey);
 

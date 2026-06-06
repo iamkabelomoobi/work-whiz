@@ -10,7 +10,7 @@
  *   limit: 10,
  *   sort: {
  *     createdAt: 'DESC',
- *     lastName: 'ASC'
+ *     updatedAt: 'ASC'
  *   }
  * }
  */
@@ -36,7 +36,7 @@ export interface IPaginationQueryOptions {
    * @example
    * {
    *   createdAt: 'DESC',
-   *   lastName: 'ASC'
+   *   updatedAt: 'ASC'
    * }
    */
   sort?: Record<string, 'ASC' | 'DESC'>;
