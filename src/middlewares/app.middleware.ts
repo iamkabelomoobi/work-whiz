@@ -1,6 +1,10 @@
 import compression from 'compression';
 import cors from 'cors';
-import express, { Application } from 'express';
+import express, {
+  Application,
+  ErrorRequestHandler,
+  RequestHandler,
+} from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import fs from 'fs';
@@ -23,6 +27,38 @@ import {
 } from '@work-whiz/routes';
 import { authenticationQueue, applicationQueue } from '@work-whiz/queues';
 import rateLimit from 'express-rate-limit';
+
+const normalizeForwardedAuthHeaders: RequestHandler = (req, _res, next) => {
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const forwardedHost = req.headers['x-forwarded-host'];
+
+  if (typeof forwardedProto === 'string' && forwardedProto.includes(',')) {
+    req.headers['x-forwarded-proto'] = forwardedProto.split(',')[0].trim();
+  }
+
+  if (typeof forwardedHost === 'string' && forwardedHost.includes(',')) {
+    req.headers['x-forwarded-host'] = forwardedHost.split(',')[0].trim();
+  }
+
+  next();
+};
+
+const authJsonParseErrorHandler: ErrorRequestHandler = (
+  error,
+  _req,
+  res,
+  next,
+) => {
+  if (error instanceof SyntaxError && 'body' in error) {
+    res.status(400).json({
+      message: 'Invalid JSON request body',
+      code: 'VALIDATION_ERROR',
+    });
+    return;
+  }
+
+  next(error);
+};
 
 export const configureMiddlewares = (app: Application): void => {
   const serverAdapter = new ExpressAdapter();
@@ -63,7 +99,17 @@ export const configureMiddlewares = (app: Application): void => {
     }),
   );
 
-  app.use(/^\/api\/auth\/.*/, toNodeHandler(auth));
+  app.use(
+    '/api/auth',
+    express.json({ limit: process.env.JSON_BODY_LIMIT || '10kb' }),
+    express.urlencoded({
+      extended: true,
+      limit: process.env.JSON_BODY_LIMIT || '10kb',
+    }),
+    authJsonParseErrorHandler,
+    normalizeForwardedAuthHeaders,
+    toNodeHandler(auth),
+  );
 
   app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '10kb' }));
   app.use(
@@ -77,8 +123,11 @@ export const configureMiddlewares = (app: Application): void => {
   if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
   } else {
+    const logsDirectory = path.join(__dirname, '../../logs');
+    fs.mkdirSync(logsDirectory, { recursive: true });
+
     const accessLogStream = fs.createWriteStream(
-      path.join(__dirname, '../../logs/access.log'),
+      path.join(logsDirectory, 'access.log'),
       { flags: 'a' },
     );
     app.use(

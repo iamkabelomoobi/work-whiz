@@ -108,5 +108,9 @@ export interface IConfig {
         pass: string;
       };
     };
+    resend: {
+      apiKey: string;
+      fromEmail: string;
+    };
   };
 }

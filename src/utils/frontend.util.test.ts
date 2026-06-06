@@ -42,7 +42,7 @@ describe('createFrontendUrl', () => {
   });
 
   it('throws on invalid role', () => {
-    expect(() => createFrontendUrl('invalid' as any)).toThrow(
+    expect(() => createFrontendUrl('invalid' as unknown as Role)).toThrow(
       'Invalid user role: invalid',
     );
   });

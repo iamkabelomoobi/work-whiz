@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ServiceError } from '@work-whiz/errors';
 import {
   IEmployer,

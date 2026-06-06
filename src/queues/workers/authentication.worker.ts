@@ -21,7 +21,7 @@ const TEMPLATES_PATH = path.join(__dirname, '../../templates/authentication');
  */
 async function renderEmailTemplate(
   templateName: string,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
 ): Promise<string> {
   const templatePath = path.join(TEMPLATES_PATH, `${templateName}.ejs`);
 

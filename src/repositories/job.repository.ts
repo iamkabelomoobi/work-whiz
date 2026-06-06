@@ -124,7 +124,11 @@ class JobRepository implements IJobRepository {
   };
 
   private toCreateData(data: Partial<IJob>): Prisma.JobUncheckedCreateInput {
-    const { employer, type, ...job } = data;
+    const { type } = data;
+    const job = { ...data };
+    delete job.employer;
+    delete job.type;
+
     return {
       ...job,
       type: jobTypeToPrisma(type),
@@ -132,7 +136,11 @@ class JobRepository implements IJobRepository {
   }
 
   private toUpdateData(data: Partial<IJob>): Prisma.JobUncheckedUpdateInput {
-    const { employer, type, ...job } = data;
+    const { type } = data;
+    const job = { ...data };
+    delete job.employer;
+    delete job.type;
+
     return {
       ...job,
       ...(type ? { type: jobTypeToPrisma(type) } : {}),
