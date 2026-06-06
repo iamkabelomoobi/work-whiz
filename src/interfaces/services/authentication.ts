@@ -5,8 +5,7 @@ export interface IBaseRegister {
   password: string;
 }
 
-export interface IAdminRegister extends IBaseRegister {
-}
+export type IAdminRegister = IBaseRegister;
 
 export interface ICandidateRegister extends IBaseRegister {
   title: string;

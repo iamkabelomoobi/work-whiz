@@ -186,11 +186,6 @@ export const startServer = async (
   try {
     await prisma.$connect();
 
-    logger.info('Database connection established successfully', {
-      dbHost: env.POSTGRES_HOST,
-      dbName: env.POSTGRES_DATABASE_NAME,
-    });
-
     if (enableHealthCheck) {
       app.get('/health', (req, res) => {
         const healthData = {

@@ -8,14 +8,8 @@ const axios = require('axios');
 const TEST_PORT = 3101;
 const TEST_HOST = '127.0.0.1';
 const STATE_FILE = path.join(process.cwd(), 'e2e/.tmp/auth-e2e-state.json');
-const MAILDEV_BIN = path.join(
-  process.cwd(),
-  'node_modules/.bin/maildev',
-);
-const PRISMA_BIN = path.join(
-  process.cwd(),
-  'node_modules/.bin/prisma',
-);
+const MAILDEV_BIN = path.join(process.cwd(), 'node_modules/.bin/maildev');
+const PRISMA_BIN = path.join(process.cwd(), 'node_modules/.bin/prisma');
 const NODE_BIN = process.execPath;
 
 const isPortOpen = (host: string, port: number): Promise<boolean> =>
@@ -108,8 +102,12 @@ const waitForMaildev = async () => {
 module.exports = async function () {
   console.log('\nSetting up...\n');
 
-  const postgresPort = await resolveServicePort(TEST_HOST, [5432, 5433], 'Postgres');
-  const redisPort = await resolveServicePort(TEST_HOST, [6379, 6380], 'Redis');
+  const postgresPort = await resolveServicePort(
+    TEST_HOST,
+    [5432, 5433],
+    'Postgres',
+  );
+  const redisPort = await resolveServicePort(TEST_HOST, [6380, 6380], 'Redis');
 
   const runtimeEnv = {
     ...process.env,

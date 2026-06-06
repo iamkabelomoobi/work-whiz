@@ -46,6 +46,8 @@ const {
   NODEMAILER_PORT,
   NODEMAILER_SERVICE,
   NODEMAILER_USERNAME,
+  RESEND_API_KEY,
+  RESEND_FROM_EMAIL,
 
   // Email Branding
   MAILGEN_PRODUCT_COPYRIGHT,
@@ -158,7 +160,10 @@ export const config: IConfig = {
   },
   database: {
     postgres: {
-      databaseName: requireEnv('POSTGRES_DATABASE_NAME', POSTGRES_DATABASE_NAME),
+      databaseName: requireEnv(
+        'POSTGRES_DATABASE_NAME',
+        POSTGRES_DATABASE_NAME,
+      ),
       username: requireEnv('POSTGRES_USERNAME', POSTGRES_USERNAME),
       password: requireEnv('POSTGRES_PASSWORD', POSTGRES_PASSWORD),
       host: requireEnv('POSTGRES_HOST', POSTGRES_HOST),
@@ -166,7 +171,7 @@ export const config: IConfig = {
     },
     redis: {
       host: requireEnv('REDIS_HOST', REDIS_HOST),
-      port: parsePort('REDIS_PORT', REDIS_PORT, 6379),
+      port: parsePort('REDIS_PORT', REDIS_PORT, 6380),
       password: optionalEnv(REDIS_PASSWORD),
     },
   },
@@ -202,6 +207,10 @@ export const config: IConfig = {
         user: optionalEnv(NODEMAILER_USERNAME),
         pass: optionalEnv(NODEMAILER_PASSWORD),
       },
+    },
+    resend: {
+      apiKey: optionalEnv(RESEND_API_KEY),
+      fromEmail: optionalEnv(RESEND_FROM_EMAIL),
     },
   },
 };

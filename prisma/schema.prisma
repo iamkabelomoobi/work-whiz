@@ -39,7 +39,7 @@ enum ApplicationStatus {
 }
 
 model User {
-  id            String     @id @default(uuid()) @db.Uuid
+  id            String     @id
   name          String
   emailVerified Boolean    @default(false)
   image         String?
@@ -65,7 +65,7 @@ model User {
 model Admin {
   id          String   @id @default(uuid()) @db.Uuid
   permissions String[] @default(["READ"])
-  userId      String   @unique @db.Uuid
+  userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -78,7 +78,7 @@ model Candidate {
   title        Title?
   skills       String[]      @default([])
   isEmployed   Boolean?      @default(false)
-  userId       String        @unique @db.Uuid
+  userId       String        @unique
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   applications Application[]
   createdAt    DateTime      @default(now())
@@ -96,7 +96,7 @@ model Employer {
   size        Int?
   foundedIn   Int?
   isVerified  Boolean  @default(false)
-  userId      String   @unique @db.Uuid
+  userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   jobs        Job[]
   createdAt   DateTime @default(now())
@@ -152,7 +152,7 @@ model Session {
   updatedAt DateTime @updatedAt
   ipAddress String?
   userAgent String?
-  userId    String   @db.Uuid
+  userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
@@ -164,7 +164,7 @@ model Account {
   id                    String    @id @default(uuid())
   accountId             String
   providerId            String
-  userId                String    @db.Uuid
+  userId                String
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?

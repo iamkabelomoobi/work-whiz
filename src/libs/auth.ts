@@ -4,8 +4,16 @@ import { authenticationTemplate } from '@work-whiz/templates';
 import { notificationUtil } from '../utils/notification.util';
 import { prisma } from './database';
 import { Role } from '@prisma/client';
+import { dash } from '@better-auth/infra';
 
 const authBaseUrl = process.env.BETTER_AUTH_URL || 'http://localhost:3000';
+const trustedOrigins = Array.from(
+  new Set(
+    [authBaseUrl, ...(process.env.CORS_ORIGINS || '').split(',')]
+      .map(origin => origin.trim())
+      .filter(Boolean),
+  ),
+);
 
 type SignUpProfileBody = {
   role?: string;
@@ -55,6 +63,7 @@ export const auth = betterAuth({
   appName: process.env.APP_NAME || 'WorkWhiz',
   baseURL: authBaseUrl,
   basePath: '/api/auth',
+  trustedOrigins,
   database: prismaAdapter(prisma, {
     provider: 'postgresql',
   }),
@@ -102,7 +111,7 @@ export const auth = betterAuth({
 
         verificationUrl.searchParams.set('callbackURL', callbackUrl);
 
-        void notificationUtil.sendEmail(
+        await notificationUtil.sendEmail(
           user.email,
           `Verify your ${process.env.APP_NAME || 'WorkWhiz'} account`,
           authenticationTemplate.emailVerification(
@@ -120,11 +129,15 @@ export const auth = betterAuth({
         data: { isVerified: true },
       });
 
-      void notificationUtil.sendEmail(
-        user.email,
-        `Welcome to ${process.env.APP_NAME || 'WorkWhiz'}`,
-        authenticationTemplate.welcome(user.name || user.email),
-      );
+      try {
+        await notificationUtil.sendEmail(
+          user.email,
+          `Welcome to ${process.env.APP_NAME || 'WorkWhiz'}`,
+          authenticationTemplate.welcome(user.name || user.email),
+        );
+      } catch (error) {
+        console.error('Failed to send welcome email', { error });
+      }
     },
   },
   emailAndPassword: {
@@ -133,7 +146,7 @@ export const auth = betterAuth({
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url, token }) => {
       try {
-        void notificationUtil.sendEmail(
+        await notificationUtil.sendEmail(
           user.email,
           'Password reset request',
           authenticationTemplate.passwordReset(url, user.name || user.email),
@@ -144,7 +157,7 @@ export const auth = betterAuth({
     },
     onPasswordReset: async ({ user }) => {
       try {
-        void notificationUtil.sendEmail(
+        await notificationUtil.sendEmail(
           user.email,
           'Your password was changed',
           authenticationTemplate.passwordUpdateNotice(user.name || user.email),
@@ -193,4 +206,5 @@ export const auth = betterAuth({
     window: 60,
     max: 100,
   },
+  plugins: [dash()],
 });
