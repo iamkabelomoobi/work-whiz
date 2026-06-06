@@ -4,7 +4,6 @@ import { employerValidator } from '@work-whiz/validators';
 describe('employerValidator', () => {
   it('should return undefined for valid employer data', () => {
     const employer = {
-      name: 'Tech Corp',
       industry: 'Technology',
       websiteUrl: 'https://techcorp.com',
       location: 'San Francisco',
@@ -25,11 +24,6 @@ describe('employerValidator', () => {
   it('should return error for invalid website URL', () => {
     const result = employerValidator({ websiteUrl: 'invalid-url' });
     expect(result?.details[0].message).toBe('Website URL must be a valid URL');
-  });
-
-  it('should return error for non-string name', () => {
-    const result = employerValidator({ name: 123 as any });
-    expect(result?.details[0].message).toBe('Company name should be a string');
   });
 
   it('should return error for non-integer size', () => {

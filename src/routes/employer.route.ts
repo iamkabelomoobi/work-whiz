@@ -131,42 +131,6 @@ export class EmployerRoutes {
 
     /**
      * @swagger
-     * /employers/me/password:
-     *   patch:
-     *     summary: Update employer password
-     *     tags: [Employers]
-     *     security:
-     *       - bearerAuth: []
-     *     requestBody:
-     *       required: true
-     *       content:
-     *         application/json:
-     *           schema:
-     *             type: object
-     *             properties:
-     *               currentPassword:
-     *                 type: string
-     *                 example: "currentpassword123"
-     *               newPassword:
-     *                 type: string
-     *                 example: "newpassword123"
-     *     responses:
-     *       200:
-     *         description: Password updated successfully
-     *       400:
-     *         description: Validation error
-     *       401:
-     *         description: Unauthorized
-     */
-    this.router.patch(
-      '/me/password',
-      profileLimiter,
-      authorizationMiddleware.isAuthorized(['employer']),
-      userController.updatePassword,
-    );
-
-    /**
-     * @swagger
      * /employers/me:
      *   delete:
      *     summary: Delete current employer account

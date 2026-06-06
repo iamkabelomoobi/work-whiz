@@ -30,12 +30,6 @@ class CandidateRepository implements ICandidateRepository {
 
     if (query.id) where.id = query.id;
     if (query.userId) where.userId = query.userId;
-    if (typeof query.firstName === 'string') {
-      where.firstName = { contains: query.firstName, mode: 'insensitive' };
-    }
-    if (typeof query.lastName === 'string') {
-      where.lastName = { contains: query.lastName, mode: 'insensitive' };
-    }
     if (typeof query.title === 'string') where.title = query.title;
     if (Array.isArray(query.title)) where.title = { in: query.title };
     if (query.skills) {

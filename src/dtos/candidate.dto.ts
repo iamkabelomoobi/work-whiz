@@ -3,16 +3,16 @@ import { ICandidate } from '@work-whiz/interfaces';
 export const toICandidateDTO = (candidate: ICandidate): ICandidate => {
   return {
     id: candidate.id,
-    firstName: candidate.firstName,
-    lastName: candidate.lastName,
     title: candidate.title,
     skills: candidate.skills,
     isEmployed: candidate.isEmployed,
     user: candidate.user
       ? {
           id: candidate.user.id,
-          avatarUrl: candidate.user.avatarUrl,
+          name: candidate.user.name,
+          image: candidate.user.image,
           email: candidate.user.email,
+          emailVerified: candidate.user.emailVerified,
           phone: candidate.user.phone,
           role: candidate.user.role,
           isVerified: candidate.user.isVerified,
@@ -21,6 +21,6 @@ export const toICandidateDTO = (candidate: ICandidate): ICandidate => {
           createdAt: candidate.user.createdAt || new Date(),
           updatedAt: candidate.user.updatedAt || new Date(),
         }
-      : null,
+      : undefined,
   };
 };

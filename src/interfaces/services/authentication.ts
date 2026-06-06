@@ -1,21 +1,17 @@
 export interface IBaseRegister {
+  name: string;
   email: string;
   phone: string;
   password: string;
 }
 
 export interface IAdminRegister extends IBaseRegister {
-  firstName: string;
-  lastName: string;
 }
 
 export interface ICandidateRegister extends IBaseRegister {
-  firstName: string;
-  lastName: string;
   title: string;
 }
 
 export interface IEmployerRegister extends IBaseRegister {
-  name: string;
   industry: string;
 }

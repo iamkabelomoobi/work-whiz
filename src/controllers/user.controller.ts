@@ -1,21 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
 import { Request, Response } from 'express';
 import { responseUtil } from '@work-whiz/utils';
-import {
-  emailValidator,
-  passwordValidator,
-  phoneValidator,
-} from '@work-whiz/validators';
+import { emailValidator, phoneValidator } from '@work-whiz/validators';
 import { userService } from '@work-whiz/services';
 
 interface IUpdateContactRequest {
   email: string;
   phone: string;
-}
-
-interface IUpdatePasswordRequest {
-  currentPassword: string;
-  newPassword: string;
 }
 
 /**
@@ -104,46 +95,6 @@ class UserController {
       responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
     } catch (error) {
       console.log(error);
-      this.handleError(res, error);
-    }
-  };
-
-  /**
-   * @swagger
-   * /users/password:
-   *   patch:
-   *     summary: Update user password
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             $ref: '#/components/schemas/UpdatePasswordRequest'
-   *     responses:
-   *       200:
-   *         description: Password updated
-   *       400:
-   *         description: Invalid input data
-   */
-  public updatePassword = async (
-    req: Request,
-    res: Response,
-  ): Promise<void> => {
-    try {
-      const { currentPassword, newPassword } =
-        req.body as IUpdatePasswordRequest;
-      const userId = req.app.locals?.userId;
-
-      if (!this.validateInput(res, passwordValidator, newPassword)) {
-        return;
-      }
-
-      const response = await userService.updatePassword(userId, {
-        currentPassword,
-        newPassword,
-      });
-      responseUtil.sendSuccess(res, response, String(StatusCodes.OK));
-    } catch (error) {
       this.handleError(res, error);
     }
   };

@@ -2,7 +2,7 @@
  * Notification utility class for sending emails.
  */
 import { config } from '@work-whiz/configs/config';
-import { notificationLib } from '@work-whiz/libs';
+import { notificationLib } from '../libs/notification.lib';
 import { logger } from './logger';
 
 export default class NotificationUtil {
@@ -39,7 +39,7 @@ export default class NotificationUtil {
       await new Promise<void>((resolve, reject) => {
         notificationLib
           .createNodemailerTransport()
-          .sendMail(mail_options, (error: { message: string }) => {
+          .sendMail(mail_options, (error: Error | null) => {
             if (error) {
               logger.error(
                 `Error sending email to ${receiver} with subject "${subject}":`,

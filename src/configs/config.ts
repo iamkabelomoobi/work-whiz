@@ -60,6 +60,34 @@ const {
   EMPLOYER_FRONTEND,
 } = process.env;
 
+const requireEnv = (name: string, value: string | undefined): string => {
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return value;
+};
+
+const optionalEnv = (value: string | undefined): string => value ?? '';
+
+const parsePort = (
+  name: string,
+  value: string | undefined,
+  defaultValue?: number,
+): number => {
+  if (!value) {
+    if (defaultValue !== undefined) return defaultValue;
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  const port = parseInt(value, 10);
+  if (Number.isNaN(port)) {
+    throw new Error(`Invalid port in environment variable: ${name}`);
+  }
+
+  return port;
+};
+
 /**
  * Application configuration object.
  * @type {IConfig}
@@ -67,82 +95,112 @@ const {
 export const config: IConfig = {
   authentication: {
     api: {
-      secret: API_SECRET_KEY,
+      secret: requireEnv('API_SECRET_KEY', API_SECRET_KEY),
     },
     argon: {
       admin: {
-        pepper: ADMIN_ARGON2_PEPPER,
+        pepper: requireEnv('ADMIN_ARGON2_PEPPER', ADMIN_ARGON2_PEPPER),
       },
       employer: {
-        pepper: EMPLOYER_ARGON2_PEPPER,
+        pepper: requireEnv('EMPLOYER_ARGON2_PEPPER', EMPLOYER_ARGON2_PEPPER),
       },
       candidate: {
-        pepper: CANDIDATE_ARGON2_PEPPER,
+        pepper: requireEnv('CANDIDATE_ARGON2_PEPPER', CANDIDATE_ARGON2_PEPPER),
       },
     },
     jwt: {
       admin: {
-        access: ADMIN_ACCESS_KEY,
-        refresh: ADMIN_REFRESH_ACCESS_KEY,
-        password_setup: ADMIN_PASSWORD_SETUP,
-        password_reset: ADMIN_PASSWORD_RESET,
+        access: requireEnv('ADMIN_ACCESS_KEY', ADMIN_ACCESS_KEY),
+        refresh: requireEnv(
+          'ADMIN_REFRESH_ACCESS_KEY',
+          ADMIN_REFRESH_ACCESS_KEY,
+        ),
+        password_setup: requireEnv(
+          'ADMIN_PASSWORD_SETUP',
+          ADMIN_PASSWORD_SETUP,
+        ),
+        password_reset: requireEnv(
+          'ADMIN_PASSWORD_RESET',
+          ADMIN_PASSWORD_RESET,
+        ),
       },
       employer: {
-        access: EMPLOYER_ACCESS_KEY,
-        refresh: EMPLOYER_REFRESH_ACCESS_KEY,
-        password_setup: EMPLOYER_PASSWORD_SETUP,
-        password_reset: EMPLOYER_PASSWORD_RESET,
+        access: requireEnv('EMPLOYER_ACCESS_KEY', EMPLOYER_ACCESS_KEY),
+        refresh: requireEnv(
+          'EMPLOYER_REFRESH_ACCESS_KEY',
+          EMPLOYER_REFRESH_ACCESS_KEY,
+        ),
+        password_setup: requireEnv(
+          'EMPLOYER_PASSWORD_SETUP',
+          EMPLOYER_PASSWORD_SETUP,
+        ),
+        password_reset: requireEnv(
+          'EMPLOYER_PASSWORD_RESET',
+          EMPLOYER_PASSWORD_RESET,
+        ),
       },
       candidate: {
-        access: CANDIDATE_ACCESS_KEY,
-        refresh: CANDIDATE_REFRESH_ACCESS_KEY,
-        password_setup: CANDIDATE_PASSWORD_SETUP,
-        password_reset: CANDIDATE_PASSWORD_RESET,
+        access: requireEnv('CANDIDATE_ACCESS_KEY', CANDIDATE_ACCESS_KEY),
+        refresh: requireEnv(
+          'CANDIDATE_REFRESH_ACCESS_KEY',
+          CANDIDATE_REFRESH_ACCESS_KEY,
+        ),
+        password_setup: requireEnv(
+          'CANDIDATE_PASSWORD_SETUP',
+          CANDIDATE_PASSWORD_SETUP,
+        ),
+        password_reset: requireEnv(
+          'CANDIDATE_PASSWORD_RESET',
+          CANDIDATE_PASSWORD_RESET,
+        ),
       },
     },
   },
   database: {
     postgres: {
-      databaseName: POSTGRES_DATABASE_NAME,
-      username: POSTGRES_USERNAME,
-      password: POSTGRES_PASSWORD,
-      host: POSTGRES_HOST,
-      port: POSTGRES_PORT ? parseInt(POSTGRES_PORT, 10) : 5432,
+      databaseName: requireEnv('POSTGRES_DATABASE_NAME', POSTGRES_DATABASE_NAME),
+      username: requireEnv('POSTGRES_USERNAME', POSTGRES_USERNAME),
+      password: requireEnv('POSTGRES_PASSWORD', POSTGRES_PASSWORD),
+      host: requireEnv('POSTGRES_HOST', POSTGRES_HOST),
+      port: parsePort('POSTGRES_PORT', POSTGRES_PORT, 5432),
     },
     redis: {
-      host: REDIS_HOST,
-      port: REDIS_PORT ? parseInt(REDIS_PORT, 10) : 6379,
-      password: REDIS_PASSWORD,
+      host: requireEnv('REDIS_HOST', REDIS_HOST),
+      port: parsePort('REDIS_PORT', REDIS_PORT, 6379),
+      password: optionalEnv(REDIS_PASSWORD),
     },
   },
   frontend: {
-    admin: ADMIN_FRONTEND,
-    candidate: CANDIDATE_FRONTEND,
-    employer: EMPLOYER_FRONTEND,
+    admin: requireEnv('ADMIN_FRONTEND', ADMIN_FRONTEND),
+    candidate: requireEnv('CANDIDATE_FRONTEND', CANDIDATE_FRONTEND),
+    employer: requireEnv('EMPLOYER_FRONTEND', EMPLOYER_FRONTEND),
   },
   logger: {
     logtail: {
-      accessToken: LOGTAIL_ACCESS_TOKEN,
+      accessToken: optionalEnv(LOGTAIL_ACCESS_TOKEN),
     },
   },
   notification: {
     mailgen: {
-      theme: MAILGEN_PRODUCT_THEME,
+      theme: requireEnv('MAILGEN_PRODUCT_THEME', MAILGEN_PRODUCT_THEME),
       product: {
-        name: MAILGEN_PRODUCT_NAME,
-        link: MAILGEN_PRODUCT_LINK,
-        logo: MAILGEN_PRODUCT_LOGO,
-        copyright: MAILGEN_PRODUCT_COPYRIGHT,
+        name: requireEnv('MAILGEN_PRODUCT_NAME', MAILGEN_PRODUCT_NAME),
+        link: requireEnv('MAILGEN_PRODUCT_LINK', MAILGEN_PRODUCT_LINK),
+        logo: optionalEnv(MAILGEN_PRODUCT_LOGO),
+        copyright: requireEnv(
+          'MAILGEN_PRODUCT_COPYRIGHT',
+          MAILGEN_PRODUCT_COPYRIGHT,
+        ),
       },
     },
     nodemailer: {
-      service: NODEMAILER_SERVICE,
-      host: NODEMAILER_HOST,
-      port: NODEMAILER_PORT ? parseInt(NODEMAILER_PORT) : undefined,
+      service: optionalEnv(NODEMAILER_SERVICE),
+      host: requireEnv('NODEMAILER_HOST', NODEMAILER_HOST),
+      port: parsePort('NODEMAILER_PORT', NODEMAILER_PORT),
       secure: true,
       auth: {
-        user: NODEMAILER_USERNAME,
-        pass: NODEMAILER_PASSWORD,
+        user: optionalEnv(NODEMAILER_USERNAME),
+        pass: optionalEnv(NODEMAILER_PASSWORD),
       },
     },
   },

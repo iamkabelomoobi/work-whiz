@@ -2,8 +2,10 @@ import { IUser } from '../interfaces';
 
 const toIUserDTO = (user: IUser): IUser => ({
   id: user.id,
-  avatarUrl: user.avatarUrl,
+  name: user.name,
+  image: user.image,
   email: user.email,
+  emailVerified: user.emailVerified,
   phone: user.phone,
   password: user.password,
   role: user.role,

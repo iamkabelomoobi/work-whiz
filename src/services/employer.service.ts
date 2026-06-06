@@ -46,8 +46,10 @@ class EmployerService extends BaseService implements IEmployerService {
    */
   public async findOne(query: IEmployerQuery): Promise<IEmployer> {
     return this.handleErrors(async () => {
-      const cacheKey = this.generateCacheKey(query.userId);
-      const cachedEmployer = await cacheUtil.get(cacheKey);
+      const cacheKey = query.userId
+        ? this.generateCacheKey(query.userId)
+        : undefined;
+      const cachedEmployer = cacheKey ? await cacheUtil.get(cacheKey) : null;
 
       if (cachedEmployer) {
         return cachedEmployer as IEmployer;
@@ -62,7 +64,9 @@ class EmployerService extends BaseService implements IEmployerService {
         });
       }
 
-      await cacheUtil.set(cacheKey, employer, 3600);
+      if (cacheKey) {
+        await cacheUtil.set(cacheKey, employer, 3600);
+      }
       return employer;
     }, this.findOne.name);
   }
@@ -86,7 +90,11 @@ class EmployerService extends BaseService implements IEmployerService {
     };
   }> {
     return this.handleErrors(async () => {
-      const payload = await employerRepository.readAll(query, options);
+      const paginationOptions = options ?? { page: 1, limit: 10 };
+      const payload = await employerRepository.readAll(
+        query,
+        paginationOptions,
+      );
       if (payload.employers.length === 0) {
         throw new ServiceError(StatusCodes.NOT_FOUND, {
           message: 'No employers found matching the provided criteria.',
@@ -128,7 +136,7 @@ class EmployerService extends BaseService implements IEmployerService {
 
       await employerRepository.update(userId, data);
 
-      const cacheKey = this.generateCacheKey(employer.userId);
+      const cacheKey = this.generateCacheKey(userId);
       await cacheUtil.delete(cacheKey);
 
       return { message: 'Employer account updated successfully.' };

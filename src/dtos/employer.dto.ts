@@ -3,7 +3,6 @@ import { IEmployer } from '@work-whiz/interfaces';
 export const toIEmployerDTO = (employer: IEmployer): IEmployer => {
   return {
     id: employer.id,
-    name: employer.name,
     industry: employer.industry,
     websiteUrl: employer.websiteUrl,
     location: employer.location,
@@ -14,8 +13,10 @@ export const toIEmployerDTO = (employer: IEmployer): IEmployer => {
     user: employer.user
       ? {
           id: employer.user.id,
-          avatarUrl: employer.user.avatarUrl,
+          name: employer.user.name,
+          image: employer.user.image,
           email: employer.user.email,
+          emailVerified: employer.user.emailVerified,
           phone: employer.user.phone,
           role: employer.user.role,
           isVerified: employer.user.isVerified,
@@ -24,6 +25,6 @@ export const toIEmployerDTO = (employer: IEmployer): IEmployer => {
           createdAt: employer.user.createdAt || new Date(),
           updatedAt: employer.user.updatedAt || new Date(),
         }
-      : null,
+      : undefined,
   };
 };

@@ -62,5 +62,7 @@ export const getLocationFromIp = async (
       }
       throw new Error('Unable to fetch location data');
     }
+
+    throw error;
   }
 };

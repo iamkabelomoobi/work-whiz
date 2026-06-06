@@ -10,12 +10,13 @@ import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import swaggerUi from 'swagger-ui-express';
+import { toNodeHandler } from 'better-auth/node';
 
 import { swaggerSpec } from '@work-whiz/configs/swagger';
+import { auth } from '@work-whiz/libs';
 import {
   AdminRoutes,
   ApplicationRoutes,
-  AuthenticationRoutes,
   CandidateRoutes,
   EmployerRoutes,
   JobRoutes,
@@ -62,6 +63,8 @@ export const configureMiddlewares = (app: Application): void => {
     }),
   );
 
+  app.use(/^\/api\/auth\/.*/, toNodeHandler(auth));
+
   app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '10kb' }));
   app.use(
     express.urlencoded({
@@ -104,11 +107,7 @@ export const configureMiddlewares = (app: Application): void => {
     app.use(limiter);
   }
 
-  // Authentication middleware
-  // app.use(authenticationMiddleware.isAuthenticated);
-
   // API Routes
-  app.use(`/api/auth`, new AuthenticationRoutes().init());
   app.use(`/api/admins`, new AdminRoutes().init());
   app.use(`/api/candidates`, new CandidateRoutes().init());
   app.use(`/api/employers`, new EmployerRoutes().init());

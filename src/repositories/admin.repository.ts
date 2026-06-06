@@ -29,12 +29,6 @@ class AdminRepository implements IAdminRepository {
     const where: Prisma.AdminWhereInput = {};
 
     if (query.id) where.id = query.id;
-    if (query.firstName) {
-      where.firstName = { contains: query.firstName, mode: 'insensitive' };
-    }
-    if (query.lastName) {
-      where.lastName = { contains: query.lastName, mode: 'insensitive' };
-    }
     if (query.permissions) {
       where.permissions = {
         hasSome: Array.isArray(query.permissions)

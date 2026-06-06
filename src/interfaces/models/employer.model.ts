@@ -2,7 +2,6 @@ import { IUser } from './user.model';
 
 interface IEmployer {
   readonly id?: string;
-  name?: string;
   industry?: string;
   websiteUrl?: string;
   location?: string;

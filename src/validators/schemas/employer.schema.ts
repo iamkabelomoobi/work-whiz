@@ -1,10 +1,6 @@
 import Joi from 'joi';
 
 export const employerSchema = Joi.object({
-  name: Joi.string().optional().messages({
-    'string.base': 'Company name should be a string',
-    'string.empty': 'Company name cannot be empty',
-  }),
   industry: Joi.string().optional().messages({
     'string.base': 'Industry should be a string',
     'string.empty': 'Industry cannot be empty',

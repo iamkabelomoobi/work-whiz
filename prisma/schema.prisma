@@ -39,28 +39,31 @@ enum ApplicationStatus {
 }
 
 model User {
-  id         String     @id @default(uuid()) @db.Uuid
-  avatarUrl  String?    @db.VarChar(512)
-  email      String     @unique @db.VarChar(255)
-  phone      String     @unique @db.VarChar(20)
-  password   String?    @db.VarChar(255)
-  role       Role       @default(candidate)
-  isVerified Boolean    @default(false)
-  isActive   Boolean    @default(true)
-  isLocked   Boolean    @default(false)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  admin      Admin?
-  candidate  Candidate?
-  employer   Employer?
+  id            String     @id @default(uuid()) @db.Uuid
+  name          String
+  emailVerified Boolean    @default(false)
+  image         String?
+  email         String     @unique @db.VarChar(255)
+  phone         String     @unique @db.VarChar(20)
+  password      String?    @db.VarChar(255)
+  role          Role       @default(candidate)
+  isVerified    Boolean    @default(false)
+  isActive      Boolean    @default(true)
+  isLocked      Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  admin         Admin?
+  candidate     Candidate?
+  employer      Employer?
+
+  sessions Session[]
+  accounts Account[]
 
   @@map("Users")
 }
 
 model Admin {
   id          String   @id @default(uuid()) @db.Uuid
-  firstName   String
-  lastName    String
   permissions String[] @default(["READ"])
   userId      String   @unique @db.Uuid
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -72,8 +75,6 @@ model Admin {
 
 model Candidate {
   id           String        @id @default(uuid()) @db.Uuid
-  firstName    String
-  lastName     String
   title        Title?
   skills       String[]      @default([])
   isEmployed   Boolean?      @default(false)
@@ -88,7 +89,6 @@ model Candidate {
 
 model Employer {
   id          String   @id @default(uuid()) @db.Uuid
-  name        String   @unique
   industry    String
   websiteUrl  String?
   location    String?
@@ -142,4 +142,52 @@ model Application {
 
   @@index([id, jobId, candidateId, status, createdAt, updatedAt], name: "application_search_index")
   @@map("Applications")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  accountId             String
+  providerId            String
+  userId                String    @db.Uuid
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }

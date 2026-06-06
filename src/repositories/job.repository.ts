@@ -93,7 +93,12 @@ class JobRepository implements IJobRepository {
     if (query.tags?.length) where.tags = { hasSome: query.tags };
     if (query.employerName) {
       where.employer = {
-        name: { contains: query.employerName, mode: 'insensitive' },
+        user: {
+          name: {
+            contains: query.employerName,
+            mode: 'insensitive',
+          },
+        },
       };
     }
 

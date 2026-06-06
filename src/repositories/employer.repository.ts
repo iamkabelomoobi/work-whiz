@@ -30,9 +30,6 @@ class EmployerRepository implements IEmployerRepository {
 
     if (query.id) where.id = query.id;
     if (query.userId) where.userId = query.userId;
-    if (typeof query.name === 'string') {
-      where.name = { contains: query.name, mode: 'insensitive' };
-    }
     if (typeof query.industry === 'string') {
       where.industry = { contains: query.industry, mode: 'insensitive' };
     }

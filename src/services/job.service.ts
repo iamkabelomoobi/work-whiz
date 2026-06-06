@@ -137,8 +137,10 @@ class JobService extends BaseService implements IJobService {
         });
       }
 
-      const cacheKey = this.generateCacheKey(newJob.id);
-      await cacheUtil.set(cacheKey, newJob, this.CACHE_TTL.SINGLE_JOB);
+      if (newJob.id) {
+        const cacheKey = this.generateCacheKey(newJob.id);
+        await cacheUtil.set(cacheKey, newJob, this.CACHE_TTL.SINGLE_JOB);
+      }
 
       return { message: 'Job created successfully.', job: newJob };
     }, this.createJob.name);
@@ -224,11 +226,13 @@ class JobService extends BaseService implements IJobService {
 
       await Promise.all(
         payload.jobs.map(job =>
-          cacheUtil.set(
-            this.generateCacheKey(job.id),
-            job,
-            this.CACHE_TTL.SINGLE_JOB,
-          ),
+          job.id
+            ? cacheUtil.set(
+                this.generateCacheKey(job.id),
+                job,
+                this.CACHE_TTL.SINGLE_JOB,
+              )
+            : Promise.resolve(),
         ),
       );
 

@@ -2,13 +2,12 @@ import { ServiceError } from '@work-whiz/errors';
 import { IUserService, IUser } from '@work-whiz/interfaces';
 import { redis } from '@work-whiz/libs';
 import { userRepository } from '@work-whiz/repositories';
-import { passwordUtil } from '@work-whiz/utils';
 import { StatusCodes } from 'http-status-codes';
 import { BaseService } from './base.service';
 
 /**
- * User service handling user-related operations like contact update,
- * password update, and account deletion.
+ * User service handling app profile operations like contact updates
+ * and account deletion. Authentication concerns are handled by Better Auth.
  */
 class Userservice extends BaseService implements IUserService {
   private static instance: Userservice;
@@ -83,68 +82,6 @@ class Userservice extends BaseService implements IUserService {
 
       await userRepository.update(id, payload);
     }, this.updateContact.name);
-
-  /**
-   * Updates a user's password after validating the current password.
-   * @param id - User ID
-   * @param passwords - Object containing current and new password
-   */
-  public updatePassword = async (
-    id: string,
-    passwords: { currentPassword: string; newPassword: string },
-  ): Promise<void> =>
-    this.handleErrors(async () => {
-      const user = await userRepository.read({ id });
-      if (!user) {
-        throw new ServiceError(StatusCodes.NOT_FOUND, {
-          message: 'The requested user could not be found in the system.',
-          trace: {
-            method: this.updatePassword.name,
-            context: { userId: id },
-          },
-        });
-      }
-
-      const isCurrentValid = await passwordUtil.compareSync(
-        user.role,
-        passwords.currentPassword,
-        user.password,
-      );
-
-      if (!isCurrentValid) {
-        throw new ServiceError(StatusCodes.UNAUTHORIZED, {
-          message: 'The current password is incorrect.',
-          trace: {
-            method: this.updatePassword.name,
-            context: { userId: id },
-          },
-        });
-      }
-
-      const isSamePassword = await passwordUtil.compareSync(
-        user.role,
-        passwords.newPassword,
-        user.password,
-      );
-
-      if (isSamePassword) {
-        throw new ServiceError(StatusCodes.BAD_REQUEST, {
-          message:
-            'The new password cannot be the same as the current password.',
-          trace: {
-            method: this.updatePassword.name,
-            context: { userId: id },
-          },
-        });
-      }
-
-      const hashedPassword = await passwordUtil.hashSync(
-        user.role,
-        passwords.newPassword,
-      );
-
-      await userRepository.update(id, { password: hashedPassword });
-    }, this.updatePassword.name);
 
   /**
    * Deletes a user account and removes their refresh token from Redis.

@@ -10,7 +10,10 @@ import {
 } from '@work-whiz/interfaces';
 import { IApplicationRepository } from '@work-whiz/interfaces/repositories';
 import { Pagination } from '@work-whiz/utils';
-import { PrismaRepositoryClient } from './prisma.repository';
+import {
+  PrismaRepositoryClient,
+  userSelectWithoutPassword,
+} from './prisma.repository';
 
 class ApplicationRepository implements IApplicationRepository {
   private static instance: ApplicationRepository;
@@ -37,7 +40,11 @@ class ApplicationRepository implements IApplicationRepository {
 
   private readonly includeRelations = {
     job: true,
-    candidate: true,
+    candidate: {
+      include: {
+        user: { select: userSelectWithoutPassword },
+      },
+    },
   } as const;
 
   private toDtoInput(application: unknown): IApplication {
@@ -62,7 +69,7 @@ class ApplicationRepository implements IApplicationRepository {
                 ? jobTypeMap[dtoApplication.job.type as JobType]
                 : dtoApplication.job.type,
           }
-        : null,
+        : undefined,
     };
   }
 

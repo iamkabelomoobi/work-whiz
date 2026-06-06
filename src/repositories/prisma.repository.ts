@@ -16,8 +16,10 @@ export const getPrismaOrderBy = (
 
 export const userSelectWithoutPassword = {
   id: true,
-  avatarUrl: true,
+  name: true,
+  image: true,
   email: true,
+  emailVerified: true,
   phone: true,
   role: true,
   isVerified: true,
@@ -26,4 +28,3 @@ export const userSelectWithoutPassword = {
   createdAt: true,
   updatedAt: true,
 } as const;
-

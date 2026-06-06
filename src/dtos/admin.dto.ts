@@ -3,14 +3,14 @@ import { IAdmin } from '@work-whiz/interfaces';
 export const toIAdminDTO = (admin: IAdmin): IAdmin => {
   return {
     id: admin.id,
-    firstName: admin.firstName,
-    lastName: admin.lastName,
     permissions: admin.permissions,
     user: admin.user
       ? {
           id: admin.user.id,
-          avatarUrl: admin.user.avatarUrl,
+          name: admin.user.name,
+          image: admin.user.image,
           email: admin.user.email,
+          emailVerified: admin.user.emailVerified,
           phone: admin.user.phone,
           role: admin.user.role,
           isVerified: admin.user.isVerified,
@@ -19,6 +19,6 @@ export const toIAdminDTO = (admin: IAdmin): IAdmin => {
           createdAt: admin.user.createdAt || new Date(),
           updatedAt: admin.user.updatedAt || new Date(),
         }
-      : null,
+      : undefined,
   };
 };
