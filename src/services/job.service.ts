@@ -187,8 +187,6 @@ class JobService extends BaseService implements IJobService {
       const searchCacheKey = this.generateSearchCacheKey(query, options);
       const cachedResults = await cacheUtil.get(searchCacheKey);
 
-      console.debug(query);
-
       if (cachedResults) {
         if (this.isValidPaginatedJobs(cachedResults)) {
           return cachedResults;
@@ -196,7 +194,10 @@ class JobService extends BaseService implements IJobService {
         await cacheUtil.delete(searchCacheKey);
       }
 
-      const payload = await jobRepository.readAll(query, options);
+      const payload = await jobRepository.search(query, options).catch(error => {
+        console.error('Elasticsearch job search failed:', error);
+        return jobRepository.readAll(query, options);
+      });
 
       if (payload.jobs.length === 0) {
         const emptyResults: IPaginatedJobs = {

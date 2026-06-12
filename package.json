@@ -15,13 +15,17 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "seed": "prisma db seed",
+    "db:reset": "prisma migrate reset --force && prisma db seed"
   },
   "private": true,
   "dependencies": {
     "@better-auth/infra": "^0.2.13",
     "@bull-board/api": "^7.1.5",
     "@bull-board/express": "^7.1.5",
+    "@elastic/elasticsearch": "^9.4.2",
+    "@faker-js/faker": "^10.4.0",
     "@logtail/node": "^0.5.8",
     "@logtail/winston": "^0.5.8",
     "@prisma/adapter-pg": "^7.8.0",
@@ -83,6 +87,7 @@
     "@types/morgan": "^1.9.10",
     "@types/node": "~25.9.2",
     "@types/nodemailer": "^8.0.0",
+    "@types/pg": "^8.20.0",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "8.60.0",
@@ -98,6 +103,7 @@
     "prettier": "^3.8.3",
     "ts-jest": "29.4.11",
     "ts-node": "10.9.2",
+    "tsx": "^4.22.4",
     "typescript": "6.0.3"
   },
   "nx": {

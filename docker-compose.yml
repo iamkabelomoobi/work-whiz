@@ -4,97 +4,85 @@ services:
     container_name: ${POSTGRES_CONTAINER_DEV:-work-whiz-postgres-dev}
     restart: unless-stopped
     ports:
-      - '${POSTGRES_HOST_PORT:-5433}:5432'
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DATABASE_NAME:-work_whiz}
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
-    healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'pg_isready -U ${POSTGRES_USERNAME:-postgres} -d ${POSTGRES_DATABASE_NAME:-work_whiz}',
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis:
     image: ${REDIS_IMAGE:-redis:7-alpine}
     container_name: ${REDIS_CONTAINER_DEV:-work-whiz-redis-dev}
     restart: unless-stopped
     ports:
-      - '${REDIS_HOST_PORT:-6380}:6380'
+      - "${REDIS_HOST_PORT:-6380}:6379"
     volumes:
       - redis_data_dev:/data
-    command: ['redis-server', '--appendonly', 'yes']
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    command: ["redis-server", "--appendonly", "yes"]
 
   mailhog:
     image: ${MAILHOG_IMAGE:-mailhog/mailhog}
     container_name: ${MAILHOG_CONTAINER_DEV:-work-whiz-mailhog-dev}
     restart: unless-stopped
     ports:
-      - '${MAILHOG_SMTP_HOST_PORT:-1026}:1025'
-      - '${MAILHOG_WEB_HOST_PORT:-8025}:8025'
-    healthcheck:
-      test:
-        [
-          'CMD',
-          'wget',
-          '--no-verbose',
-          '--tries=1',
-          '--spider',
-          'http://localhost:8025',
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - "${MAILHOG_SMTP_HOST_PORT:-1026}:1025"
+      - "${MAILHOG_WEB_HOST_PORT:-8026}:8025"
 
   elasticsearch:
     image: ${ELASTICSEARCH_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:8.15.3}
     container_name: ${ELASTICSEARCH_CONTAINER_DEV:-work-whiz-elasticsearch-dev}
     restart: unless-stopped
     ports:
-      - '${ELASTICSEARCH_PORT:-9200}:9200'
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
     environment:
       discovery.type: single-node
-      xpack.security.enabled: 'false'
-      ES_JAVA_OPTS: '-Xms512m -Xmx512m'
+      xpack.security.enabled: "true"
+      xpack.security.http.ssl.enabled: "false"
+      xpack.security.transport.ssl.enabled: "false"
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-elastic_dev_password}
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     volumes:
       - elasticsearch_data_dev:/usr/share/elasticsearch/data
     healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'curl -fs http://localhost:9200/_cluster/health || exit 1',
-        ]
+      test: ["CMD-SHELL", "curl -fs -u elastic:${ELASTIC_PASSWORD:-elastic_dev_password} http://localhost:9200/_cluster/health || exit 1"]
       interval: 20s
       timeout: 10s
       retries: 10
+
+  elasticsearch-setup:
+    image: curlimages/curl:8.10.1
+    container_name: work-whiz-elasticsearch-setup-dev
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-elastic_dev_password}
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-kibana_dev_password}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        curl -s -u elastic:$${ELASTIC_PASSWORD}
+        -X POST http://elasticsearch:9200/_security/user/kibana_system/_password
+        -H 'Content-Type: application/json'
+        -d "{\"password\":\"$${KIBANA_SYSTEM_PASSWORD}\"}"
+    restart: "no"
 
   kibana:
     image: ${KIBANA_IMAGE:-docker.elastic.co/kibana/kibana:8.15.3}
     container_name: ${KIBANA_CONTAINER_DEV:-work-whiz-kibana-dev}
     restart: unless-stopped
     ports:
-      - '${KIBANA_PORT:-5601}:5601'
+      - "${KIBANA_PORT:-5601}:5601"
     environment:
-      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+      ELASTICSEARCH_USERNAME: kibana_system
+      ELASTICSEARCH_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-kibana_dev_password}
+      XPACK_FLEET_ENABLED: "true"
     depends_on:
-      elasticsearch:
-        condition: service_healthy
-    healthcheck:
-      test: ['CMD-SHELL', 'curl -fs http://localhost:5601/api/status || exit 1']
-      interval: 30s
-      timeout: 10s
-      retries: 10
+      elasticsearch-setup:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data_dev:
