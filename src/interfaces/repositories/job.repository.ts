@@ -18,6 +18,13 @@ export interface IJobRepository {
     currentPage: number;
     perPage: number;
   }>;
+  search(query: IJobQuery, options: IPaginationQueryOptions): Promise<{
+    jobs: IJob[];
+    total: number;
+    totalPages: number;
+    currentPage: number;
+    perPage: number;
+  }>;
   update(id: string, data: Partial<IJob>): Promise<IJob>;
   delete(id: string): Promise<boolean>;
 
