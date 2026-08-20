@@ -11,6 +11,9 @@ if (!baseURL) {
 
 const api = axios.create({
   baseURL,
+  headers: {
+    Origin: baseURL,
+  },
   validateStatus: () => true,
 });
 
@@ -25,6 +28,13 @@ const password = 'AuthTest!12345';
 const newPassword = 'AuthTest!67890';
 
 type SignupRole = 'admin' | 'candidate' | 'employer';
+type GraphQLResponse<TData> = {
+  data?: TData;
+  errors?: Array<{
+    message: string;
+    extensions?: Record<string, unknown>;
+  }>;
+};
 
 const buildEmail = (role: SignupRole): string =>
   `${emailPrefix}.${role}@example.com`;
@@ -114,7 +124,13 @@ const signUpUser = async (
     ...rolePayload,
   });
 
-  expect(response.status).toBe(200);
+  if (response.status !== 200) {
+    throw new Error(
+      `Expected sign up to return 200, received ${response.status}: ${JSON.stringify(
+        response.data,
+      )}`,
+    );
+  }
 
   return {
     email,
@@ -144,6 +160,26 @@ const signInUser = async (
   expect(response.headers['set-cookie']).toBeDefined();
 
   return { cookie: cookieHeader(response) };
+};
+
+const graphQLRequest = async <TData>(
+  cookie: string,
+  query: string,
+  variables?: Record<string, unknown>,
+): Promise<GraphQLResponse<TData>> => {
+  const response = await api.post(
+    '/graphql',
+    { query, variables },
+    {
+      headers: {
+        Cookie: cookie,
+      },
+    },
+  );
+
+  expect(response.status).toBe(200);
+
+  return response.data as GraphQLResponse<TData>;
 };
 
 const requestPasswordResetToken = async (email: string): Promise<string> => {
@@ -187,35 +223,32 @@ describe('Auth e2e', () => {
     await prisma.$disconnect();
   });
 
-  it.each<[
-    SignupRole,
-    string,
-    string,
-  ]>([
-    ['candidate', '/api/candidates/me', '/api/admins/me'],
-    ['admin', '/api/admins/me', '/api/candidates/me'],
-    ['employer', '/api/employers/me', '/api/admins/me'],
-  ])(
-    'creates a %s user through Better Auth and authorizes protected routes',
-    async (role, allowedRoute, forbiddenRoute) => {
+  it.each<SignupRole>(['candidate', 'admin', 'employer'])(
+    'creates a %s user through Better Auth and authorizes GraphQL profile access',
+    async role => {
       const { email } = await signUpUser(role);
       await verifyEmail(email);
 
       const session = await signInUser(email, password);
+      const meResult = await graphQLRequest<{
+        me: {
+          email: string;
+          role: SignupRole;
+        };
+      }>(
+        session.cookie,
+        `
+          query Me {
+            me {
+              email
+              role
+            }
+          }
+        `,
+      );
 
-      const allowedResponse = await api.get(allowedRoute, {
-        headers: {
-          Cookie: session.cookie,
-        },
-      });
-      expect(allowedResponse.status).toBe(200);
-
-      const forbiddenResponse = await api.get(forbiddenRoute, {
-        headers: {
-          Cookie: session.cookie,
-        },
-      });
-      expect(forbiddenResponse.status).toBe(403);
+      expect(meResult.errors).toBeUndefined();
+      expect(meResult.data?.me).toMatchObject({ email, role });
 
       const user = await prisma.user.findFirst({
         where: { email },
@@ -226,6 +259,35 @@ describe('Auth e2e', () => {
       expect(user?.role).toBe(role);
 
       if (role === 'candidate') {
+        const profileResult = await graphQLRequest<{
+          candidateProfile: {
+            title: string;
+            user: {
+              email: string;
+              role: SignupRole;
+            };
+          };
+        }>(
+          session.cookie,
+          `
+            query CandidateProfile {
+              candidateProfile {
+                title
+                user {
+                  email
+                  role
+                }
+              }
+            }
+          `,
+        );
+
+        expect(profileResult.errors).toBeUndefined();
+        expect(profileResult.data?.candidateProfile).toMatchObject({
+          title: 'Mr',
+          user: { email, role },
+        });
+
         const profile = await prisma.candidate.findFirst({
           where: { userId: user!.id },
         });
@@ -235,6 +297,38 @@ describe('Auth e2e', () => {
       }
 
       if (role === 'admin') {
+        const profileResult = await graphQLRequest<{
+          adminProfile: {
+            permissions: string[];
+            user: {
+              email: string;
+              role: SignupRole;
+            };
+          };
+        }>(
+          session.cookie,
+          `
+            query AdminProfile {
+              adminProfile {
+                permissions
+                user {
+                  email
+                  role
+                }
+              }
+            }
+          `,
+        );
+
+        expect(profileResult.errors).toBeUndefined();
+        expect(profileResult.data?.adminProfile?.permissions).toEqual(
+          expect.any(Array),
+        );
+        expect(profileResult.data?.adminProfile?.user).toMatchObject({
+          email,
+          role,
+        });
+
         const profile = await prisma.admin.findFirst({
           where: { userId: user!.id },
         });
@@ -242,6 +336,50 @@ describe('Auth e2e', () => {
       }
 
       if (role === 'employer') {
+        const profileResult = await graphQLRequest<{
+          employerProfile: {
+            industry: string;
+            websiteUrl: string;
+            location: string;
+            description: string;
+            size: number;
+            foundedIn: number;
+            user: {
+              email: string;
+              role: SignupRole;
+            };
+          };
+        }>(
+          session.cookie,
+          `
+            query EmployerProfile {
+              employerProfile {
+                industry
+                websiteUrl
+                location
+                description
+                size
+                foundedIn
+                user {
+                  email
+                  role
+                }
+              }
+            }
+          `,
+        );
+
+        expect(profileResult.errors).toBeUndefined();
+        expect(profileResult.data?.employerProfile).toMatchObject({
+          industry: 'Technology',
+          websiteUrl: 'https://example.com',
+          location: 'Remote',
+          description: 'Test employer',
+          size: 25,
+          foundedIn: 2020,
+          user: { email, role },
+        });
+
         const profile = await prisma.employer.findFirst({
           where: { userId: user!.id },
         });
@@ -266,12 +404,23 @@ describe('Auth e2e', () => {
 
     expect(resetResponse.status).toBe(200);
 
-    const oldSessionResponse = await api.get('/api/candidates/me', {
-      headers: {
-        Cookie: session.cookie,
-      },
-    });
-    expect(oldSessionResponse.status).toBe(401);
+    const oldSessionResponse = await graphQLRequest<{
+      me?: {
+        id: string;
+      };
+    }>(
+      session.cookie,
+      `
+        query Me {
+          me {
+            id
+          }
+        }
+      `,
+    );
+    expect(oldSessionResponse.errors?.[0].message).toBe(
+      'Not authorized to resolve Query.me',
+    );
 
     const oldPasswordLogin = await api.post('/api/auth/sign-in/email', {
       email,
@@ -297,5 +446,190 @@ describe('Auth e2e', () => {
       },
     );
     expect(signedOut.status).toBe(200);
+  });
+
+  it('authenticates with Better Auth and performs candidate profile CRUD through GraphQL', async () => {
+    const { email } = await signUpUser('candidate');
+    await verifyEmail(email);
+
+    const session = await signInUser(email, password);
+
+    const meResult = await graphQLRequest<{
+      me: {
+        id: string;
+        email: string;
+        role: SignupRole;
+      };
+    }>(
+      session.cookie,
+      `
+        query Me {
+          me {
+            id
+            email
+            role
+          }
+        }
+      `,
+    );
+
+    expect(meResult.errors).toBeUndefined();
+    expect(meResult.data?.me).toMatchObject({
+      email,
+      role: 'candidate',
+    });
+
+    const profileResult = await graphQLRequest<{
+      candidateProfile: {
+        id: string;
+        title: string;
+        skills: string[];
+        user: {
+          email: string;
+          role: SignupRole;
+        };
+      };
+    }>(
+      session.cookie,
+      `
+        query CandidateProfile {
+          candidateProfile {
+            id
+            title
+            skills
+            user {
+              email
+              role
+            }
+          }
+        }
+      `,
+    );
+
+    expect(profileResult.errors).toBeUndefined();
+    expect(profileResult.data?.candidateProfile).toMatchObject({
+      title: 'Mr',
+      skills: [],
+      user: {
+        email,
+        role: 'candidate',
+      },
+    });
+
+    const updateProfileResult = await graphQLRequest<{
+      updateCandidateProfile: {
+        message: string;
+      };
+    }>(
+      session.cookie,
+      `
+        mutation UpdateCandidateProfile($input: CandidateProfileInput!) {
+          updateCandidateProfile(input: $input) {
+            message
+          }
+        }
+      `,
+      {
+        input: {
+          title: 'Dr',
+          skills: ['typescript', 'graphql'],
+          isEmployed: true,
+        },
+      },
+    );
+
+    expect(updateProfileResult.errors).toBeUndefined();
+    expect(updateProfileResult.data?.updateCandidateProfile).toEqual({
+      message: 'Candidate account updated successfully.',
+    });
+
+    const newEmail = `${emailPrefix}.candidate.updated@example.com`;
+    const updateContactResult = await graphQLRequest<{
+      updateContact: {
+        message: string;
+      };
+    }>(
+      session.cookie,
+      `
+        mutation UpdateContact($input: ContactInput!) {
+          updateContact(input: $input) {
+            message
+          }
+        }
+      `,
+      {
+        input: {
+          email: newEmail,
+          phone: '+27820000001',
+        },
+      },
+    );
+
+    expect(updateContactResult.errors).toBeUndefined();
+    expect(updateContactResult.data?.updateContact).toEqual({
+      message: 'Contact information updated successfully',
+    });
+
+    const forbiddenEmployerUpdate = await graphQLRequest<{
+      updateEmployerProfile?: {
+        message: string;
+      };
+    }>(
+      session.cookie,
+      `
+        mutation ForbiddenEmployerUpdate {
+          updateEmployerProfile(input: { industry: "Finance" }) {
+            message
+          }
+        }
+      `,
+    );
+
+    expect(forbiddenEmployerUpdate.errors?.[0].message).toBe(
+      'Not authorized to resolve Mutation.updateEmployerProfile',
+    );
+
+    const user = await prisma.user.findFirstOrThrow({
+      where: { email: newEmail },
+      include: { candidate: true },
+    });
+
+    expect(user).toMatchObject({
+      email: newEmail,
+      phone: '+27820000001',
+      role: 'candidate',
+    });
+    expect(user.candidate).toMatchObject({
+      title: 'Dr',
+      skills: ['typescript', 'graphql'],
+      isEmployed: true,
+    });
+
+    const deleteAccountResult = await graphQLRequest<{
+      deleteAccount: {
+        message: string;
+      };
+    }>(
+      session.cookie,
+      `
+        mutation DeleteAccount {
+          deleteAccount {
+            message
+          }
+        }
+      `,
+    );
+
+    expect(deleteAccountResult.errors).toBeUndefined();
+    expect(deleteAccountResult.data?.deleteAccount).toEqual({
+      message: 'User deleted successfully',
+    });
+
+    const deletedUser = await prisma.user.findFirst({
+      where: { id: user.id },
+      include: { candidate: true },
+    });
+
+    expect(deletedUser).toBeNull();
   });
 });

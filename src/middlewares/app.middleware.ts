@@ -19,13 +19,11 @@ import { toNodeHandler } from 'better-auth/node';
 import { swaggerSpec } from '@work-whiz/configs/swagger';
 import { auth } from '@work-whiz/libs';
 import {
-  AdminRoutes,
   ApplicationRoutes,
-  CandidateRoutes,
-  EmployerRoutes,
   JobRoutes,
 } from '@work-whiz/routes';
 import { authenticationQueue, applicationQueue } from '@work-whiz/queues';
+import { createGraphQLMiddleware } from '@work-whiz/app';
 import rateLimit from 'express-rate-limit';
 
 const normalizeForwardedAuthHeaders: RequestHandler = (req, _res, next) => {
@@ -119,6 +117,7 @@ export const configureMiddlewares = (app: Application): void => {
     }),
   );
   app.use(compression());
+  app.use('/graphql', createGraphQLMiddleware());
 
   if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
@@ -157,9 +156,6 @@ export const configureMiddlewares = (app: Application): void => {
   }
 
   // API Routes
-  app.use(`/api/admins`, new AdminRoutes().init());
-  app.use(`/api/candidates`, new CandidateRoutes().init());
-  app.use(`/api/employers`, new EmployerRoutes().init());
   app.use(`/api/jobs`, new JobRoutes().init());
   app.use(`/api/applications`, new ApplicationRoutes().init());
 };
