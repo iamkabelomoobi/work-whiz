@@ -13,3 +13,5 @@ export { notificationUtil } from './notification.util';
 export { Pagination } from './pagination.util';
 
 export { responseUtil } from './response.util';
+
+export { assertValid } from './validation';

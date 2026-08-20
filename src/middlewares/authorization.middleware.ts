@@ -34,7 +34,7 @@ class AuthorizationMiddleware {
    * // Usage in route definition
    * router.get('/admin',
    *   authorizationMiddleware.isAuthorized(['admin', 'super_admin']),
-   *   adminController.getDashboard
+   *   jobController.createJob
    * );
    */
   public isAuthorized =

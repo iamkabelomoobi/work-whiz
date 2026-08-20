@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const net = require('node:net');
 const axios = require('axios');
+require('dotenv').config({ path: path.join(process.cwd(), '.env') });
 
 const TEST_PORT = 3101;
 const TEST_HOST = '127.0.0.1';
