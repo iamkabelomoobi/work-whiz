@@ -13,24 +13,42 @@ permissions:
 jobs:
   main:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
-      # Connect your workspace on nx.app and uncomment this to enable task distribution.
-      # The "--stop-agents-after" is optional, but allows idle agents to shut down once the "build" targets have been requested
-      # - run: npx nx-cloud start-ci-run --distribute-on="5 linux-medium-js" --stop-agents-after="build"
-
-      # Cache node_modules
-      - uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24
+          cache: npm
 
-      - run: npm ci
-      - uses: nrwl/nx-set-shas@v4
+      - name: Setup npm
+        run: npm install --global npm@11.16.0
 
-      # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
-      # - run: npx nx-cloud record -- echo Hello World
-      - run: npx nx affected -t lint test build
+      - name: Verify versions
+        run: |
+          node --version
+          npm --version
+          npx nx --version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set Nx SHAs
+        uses: nrwl/nx-set-shas@4f6c5f7d8c7e6b5a4d3c2b1a0987654321fedcba # v4
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npx nx affected -t lint
+
+      - name: Test
+        run: npx nx affected -t test
+
+      - name: Build
+        run: npx nx affected -t build
